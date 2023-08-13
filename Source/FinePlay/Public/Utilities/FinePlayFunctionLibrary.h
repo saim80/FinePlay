@@ -18,4 +18,10 @@ class FINEPLAY_API UFinePlayFunctionLibrary : public UBlueprintFunctionLibrary
 public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "FinePlay")
 	static UFineSceneLoop* GetSceneLoop(const UObject* WorldContextObject);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "FinePlay")
+	static bool IsStreamingCompleted(const UObject* WorldContextObject);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "FinePlay")
+	static bool IsStreamingNeeded(const UObject* WorldContextObject);
 };

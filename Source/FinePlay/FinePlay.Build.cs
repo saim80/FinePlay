@@ -28,7 +28,9 @@ public class FinePlay : ModuleRules
 			new string[]
 			{
 				"Core",
-				"FineBase", "Engine",
+				"FineBase", 
+				"FineWidget",
+				"Engine",
 				// ... add other public dependencies that you statically link with here ...
 			}
 		);

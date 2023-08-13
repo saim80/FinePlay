@@ -6,6 +6,7 @@
 #include "GameFramework/GameStateBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "Scene/FineSceneLoop.h"
+#include "WorldPartition/WorldPartition.h"
 
 UFineSceneLoop* UFinePlayFunctionLibrary::GetSceneLoop(const UObject* WorldContextObject)
 {
@@ -18,4 +19,27 @@ UFineSceneLoop* UFinePlayFunctionLibrary::GetSceneLoop(const UObject* WorldConte
 	const auto Component = GameState->GetComponentByClass(UFineSceneLoop::StaticClass());
 	// Cast the component to return type and return it.
 	return Cast<UFineSceneLoop>(Component);
+}
+
+bool UFinePlayFunctionLibrary::IsStreamingCompleted(const UObject* WorldContextObject)
+{
+	// Get player controller.
+	const auto PlayerController = UGameplayStatics::GetPlayerController(WorldContextObject, 0);
+	// Get streaming source from the player controller.
+	TArray<FWorldPartitionStreamingSource> StreamingSources;
+	if (PlayerController->GetStreamingSources(StreamingSources))
+	{
+		// Get world partition subsystem.
+		const auto WorldPartition = WorldContextObject->GetWorld()->GetWorldPartition();
+		// Check if player controller's streaming sources are completed or not.
+		return WorldPartition->IsStreamingCompleted(&StreamingSources);
+	}
+	return false;
+}
+
+bool UFinePlayFunctionLibrary::IsStreamingNeeded(const UObject* WorldContextObject)
+{
+	// Get player controller.
+	const auto PlayerController = UGameplayStatics::GetPlayerController(WorldContextObject, 0);
+	return PlayerController->IsStreamingSourceEnabled() && IsStreamingCompleted(WorldContextObject) == false;
 }
