@@ -24,7 +24,11 @@
 	"Plugins": [
 		{
 			"Name": "FineBase",
-			"Enabled": true 
+			"Enabled": true
+		},
+		{
+			"Name": "FineWidget",
+			"Enabled": true
 		}
 	]
 }
