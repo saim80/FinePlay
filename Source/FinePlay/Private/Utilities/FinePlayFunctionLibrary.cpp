@@ -31,8 +31,11 @@ bool UFinePlayFunctionLibrary::IsStreamingCompleted(const UObject* WorldContextO
 	{
 		// Get world partition subsystem.
 		const auto WorldPartition = WorldContextObject->GetWorld()->GetWorldPartition();
-		// Check if player controller's streaming sources are completed or not.
-		return WorldPartition->IsStreamingCompleted(&StreamingSources);
+		if (IsValid(WorldPartition))
+		{
+			// Check if player controller's streaming sources are completed or not.
+			return WorldPartition->IsStreamingCompleted(&StreamingSources);
+		}
 	}
 	return false;
 }

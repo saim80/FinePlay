@@ -4,6 +4,7 @@
 #include "FineGameState.h"
 
 #include "Scene/FineSceneLoop.h"
+#include "Data/FineLocalDatabaseComponent.h"
 
 
 // Sets default values
@@ -19,4 +20,5 @@ AFineGameState::AFineGameState(): Super()
 		TargetClass = SceneLoopClass.LoadSynchronous();
 	}
 	SceneLoop = Cast<UFineSceneLoop>(CreateDefaultSubobject(TEXT("SceneLoop"), TargetClass, TargetClass, true, false));
+	LocalDatabaseComponent = CreateDefaultSubobject<UFineLocalDatabaseComponent>(TEXT("LocalDatabaseComponent"));
 }

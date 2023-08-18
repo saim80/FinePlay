@@ -26,4 +26,7 @@ private:
 
 	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UFineSceneLoop> SceneLoop;
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UFineLocalDatabaseComponent> LocalDatabaseComponent;
 };
