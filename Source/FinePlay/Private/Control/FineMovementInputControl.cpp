@@ -146,9 +146,7 @@ void UFineMovementInputControl::OnSetDestinationReleased()
 		const auto PlayerController = CastChecked<APlayerController>(GetOwner());
 		// We move there and spawn some particles
 		UAIBlueprintHelperLibrary::SimpleMoveToLocation(PlayerController, CachedDestination);
-		UNiagaraFunctionLibrary::SpawnSystemAtLocation(PlayerController, FXCursor, CachedDestination,
-		                                               FRotator::ZeroRotator,
-		                                               FVector(1.f, 1.f, 1.f), true, true, ENCPoolMethod::None, true);
+		SpawnCursorEffect(CachedDestination);
 	}
 
 	FollowTime = 0.f;
@@ -173,7 +171,7 @@ void UFineMovementInputControl::OnWalkTriggered(const FInputActionInstance& Inpu
 
 	CachedDestination.X = InputValue.X;
 	CachedDestination.Y = InputValue.Y;
-	
+
 	// Add movement input to the controller.
 	const auto PlayerController = CastChecked<APlayerController>(GetOwner());
 	APawn* ControlledPawn = PlayerController->GetPawn();
@@ -225,4 +223,17 @@ void UFineMovementInputControl::Deactivate()
 	}
 
 	Super::Deactivate();
+}
+
+void UFineMovementInputControl::SpawnCursorEffect(const FVector& Location)
+{
+	if (IsValid(FXCursor))
+	{
+		const auto PlayerController = CastChecked<APlayerController>(GetOwner());
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(PlayerController, FXCursor, Location,
+		                                               FRotator::ZeroRotator,
+		                                               FVector(1.f, 1.f, 1.f), true, true, ENCPoolMethod::None,
+		                                               true);
+	}
+	OnCursorEffectSpawned.Broadcast(Location);
 }

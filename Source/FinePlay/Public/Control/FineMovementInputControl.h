@@ -7,6 +7,7 @@
 #include "Components/ActorComponent.h"
 #include "FineMovementInputControl.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCursorEffectSpawned, const FVector&, Location);
 
 struct FInputBindingHandle;
 class UInputAction;
@@ -32,6 +33,9 @@ public:
 	virtual void SetupInputComponent();
 	virtual void TearDownInputComponent();
 
+	UPROPERTY(BlueprintAssignable)
+	FOnCursorEffectSpawned OnCursorEffectSpawned;
+
 protected:
 	/** True if the controlled character should navigate to the mouse cursor. */
 	uint32 bMoveToMouseCursor : 1;
@@ -47,6 +51,7 @@ protected:
 	virtual void Activate(bool bReset) override;
 	virtual void Deactivate() override;
 
+	virtual void SpawnCursorEffect(const FVector& Location);
 private:
 	/// Used to remember the destination of the last movement input.
 	FVector CachedDestination;
