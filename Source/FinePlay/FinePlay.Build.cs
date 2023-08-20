@@ -35,6 +35,9 @@ public class FinePlay : ModuleRules
 				"EnhancedInput", 
 				"Niagara",
 				"AIModule",
+				"GameplayAbilities",
+				"GameplayTasks",
+				"Paper2D",
 				// ... add other public dependencies that you statically link with here ...
 			}
 		);

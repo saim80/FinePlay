@@ -7,8 +7,6 @@
 
 AFinePlayerController::AFinePlayerController(): Super()
 {
-	MovementInputControl = CreateDefaultSubobject<UFineMovementInputControl>(TEXT("MovementInputControl"));
-
 	SetShowMouseCursor(true);
 	DefaultMouseCursor = EMouseCursor::Default;
 }
@@ -22,10 +20,3 @@ void AFinePlayerController::BeginPlay()
 	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
 	SetInputMode(InputMode);
 }
-
-void AFinePlayerController::SetupInputComponent()
-{
-	Super::SetupInputComponent();
-	MovementInputControl->SetActive(true);
-}
-

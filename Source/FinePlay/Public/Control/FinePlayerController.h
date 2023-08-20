@@ -19,9 +19,5 @@ public:
 	
 protected:
 	virtual void BeginPlay() override;
-	virtual void SetupInputComponent() override;
 	
-private:
-	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category=InputControl, meta = (AllowPrivateAccess = "true"))
-	UFineMovementInputControl* MovementInputControl;
 };

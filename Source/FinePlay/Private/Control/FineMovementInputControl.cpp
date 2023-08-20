@@ -3,6 +3,8 @@
 
 #include "Control/FineMovementInputControl.h"
 
+#include "AbilitySystemBlueprintLibrary.h"
+#include "AbilitySystemComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "NiagaraFunctionLibrary.h"
@@ -19,7 +21,6 @@ UFineMovementInputControl::UFineMovementInputControl(): Super()
 	FollowTime = 0.0f;
 	ShortPressThreshold = 0.3f;
 }
-
 
 void UFineMovementInputControl::SetupInputComponent()
 {
@@ -72,6 +73,26 @@ void UFineMovementInputControl::SetupInputComponent()
 		                                                      &UFineMovementInputControl::OnWalkReleased));
 		ActionBindings.Add(EnhancedInputComponent->BindAction(WalkAction, ETriggerEvent::Canceled, this,
 		                                                      &UFineMovementInputControl::OnWalkReleased));
+
+		// Setup Run input events
+		ActionBindings.Add(EnhancedInputComponent->BindAction(RunKeyAction, ETriggerEvent::Started, this,
+		                                                      &UFineMovementInputControl::OnInputStarted));
+		ActionBindings.Add(EnhancedInputComponent->BindAction(RunKeyAction, ETriggerEvent::Triggered, this,
+		                                                      &UFineMovementInputControl::OnRunKeyTriggered));
+		ActionBindings.Add(EnhancedInputComponent->BindAction(RunKeyAction, ETriggerEvent::Completed, this,
+		                                                      &UFineMovementInputControl::OnRunKeyReleased));
+		ActionBindings.Add(EnhancedInputComponent->BindAction(RunKeyAction, ETriggerEvent::Canceled, this,
+		                                                      &UFineMovementInputControl::OnRunKeyReleased));
+
+		// Setup run touch input events.
+		ActionBindings.Add(EnhancedInputComponent->BindAction(RunTouchAction, ETriggerEvent::Started, this,
+		                                                      &UFineMovementInputControl::OnInputStarted));
+		ActionBindings.Add(EnhancedInputComponent->BindAction(RunTouchAction, ETriggerEvent::Triggered, this,
+		                                                      &UFineMovementInputControl::OnRunTouchTriggered));
+		ActionBindings.Add(EnhancedInputComponent->BindAction(RunTouchAction, ETriggerEvent::Completed, this,
+		                                                      &UFineMovementInputControl::OnRunTouchReleased));
+		ActionBindings.Add(EnhancedInputComponent->BindAction(RunTouchAction, ETriggerEvent::Canceled, this,
+		                                                      &UFineMovementInputControl::OnRunTouchReleased));
 	}
 }
 
@@ -101,6 +122,8 @@ void UFineMovementInputControl::OnInputStarted()
 {
 	const auto PlayerController = CastChecked<APlayerController>(GetOwner());
 	PlayerController->StopMovement();
+
+	OnMovementStarted.Broadcast();
 }
 
 void UFineMovementInputControl::OnSetDestinationTriggered()
@@ -186,6 +209,89 @@ void UFineMovementInputControl::OnWalkReleased(const FInputActionInstance& Input
 	CachedDestination = FVector::ZeroVector;
 }
 
+void UFineMovementInputControl::OnRunKeyTriggered()
+{
+	// clear run disable timer.
+	GetWorld()->GetTimerManager().ClearTimer(RunDisableTimerHandle);
+	
+	UAbilitySystemComponent* AbilitySystemComponent;
+	if (!GetAbilitySystemComponent(AbilitySystemComponent))
+	{
+		return;
+	}
+	if (!IsCharacterRunning(AbilitySystemComponent))
+	{
+		AbilitySystemComponent->PressInputID(RunActionInputID);
+	}
+}
+
+void UFineMovementInputControl::OnRunKeyReleased()
+{
+	UAbilitySystemComponent* AbilitySystemComponent;
+	if (!GetAbilitySystemComponent(AbilitySystemComponent))
+	{
+		return;
+	}
+	if (IsCharacterRunning(AbilitySystemComponent))
+	{
+		AbilitySystemComponent->ReleaseInputID(RunActionInputID);
+	}
+}
+
+void UFineMovementInputControl::OnRunTouchTriggered()
+{
+	OnRunKeyTriggered();
+}
+
+void UFineMovementInputControl::OnRunTouchReleased()
+{
+	// if it was a short press
+	if (FollowTime <= ShortPressThreshold)
+	{
+		// create weak this
+		TWeakObjectPtr<UFineMovementInputControl> WeakThis(this);
+		// Start run disable timer.
+		GetWorld()->GetTimerManager().SetTimer(RunDisableTimerHandle, [=]()
+		{
+			// if weak this is still valid
+			if (!WeakThis.IsValid())
+			{
+				return;
+			}
+			const auto This = WeakThis.Get();
+			// Check if player is still running
+			UAbilitySystemComponent* AbilitySystemComponent;
+			if (!This->GetAbilitySystemComponent(AbilitySystemComponent))
+			{
+				return;
+			}
+			if (!This->IsCharacterRunning(AbilitySystemComponent))
+			{
+				// clear timer
+				This->GetWorld()->GetTimerManager().ClearTimer(This->RunDisableTimerHandle);
+				return;
+			}
+			// track the destination distance periodically and quit running if it's too close
+			const auto PlayerController = CastChecked<APlayerController>(This->GetOwner());
+			const APawn* ControlledPawn = PlayerController->GetPawn();
+			if (ControlledPawn != nullptr)
+			{
+				const float Distance = FVector::Dist(ControlledPawn->GetActorLocation(), This->CachedDestination);
+				if (Distance <= 5.0f)
+				{
+					This->OnRunKeyReleased();
+					// Clear timer
+					This->GetWorld()->GetTimerManager().ClearTimer(This->RunDisableTimerHandle);
+				}
+			}
+		}, 0.1f, true);
+	}
+	else
+	{
+		OnRunKeyReleased();
+	}
+}
+
 void UFineMovementInputControl::Activate(bool bReset)
 {
 	Super::Activate(bReset);
@@ -236,4 +342,30 @@ void UFineMovementInputControl::SpawnCursorEffect(const FVector& Location)
 		                                               true);
 	}
 	OnCursorEffectSpawned.Broadcast(Location);
+}
+
+bool UFineMovementInputControl::GetAbilitySystemComponent(OUT UAbilitySystemComponent*& OutComponent)
+{
+	// Get player controller. Assume the owner is the one.
+	const auto PlayerController = CastChecked<APlayerController>(GetOwner());
+	// Get pawn
+	APawn* ControlledPawn = PlayerController->GetPawn();
+	// Get ability system component from the pawn
+	UAbilitySystemComponent* AbilitySystemComponent = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(
+		ControlledPawn);
+	// If ability system component is invalid, return
+	if (!IsValid(AbilitySystemComponent))
+	{
+		OutComponent = nullptr;
+		return false;
+	}
+	OutComponent = AbilitySystemComponent;
+	return true;
+}
+
+bool UFineMovementInputControl::IsCharacterRunning(const UAbilitySystemComponent* AbilitySystemComponent)
+{
+	// Check if the ability system already has Actor.State.Running tag.
+	const auto TagRunning = FGameplayTag::RequestGameplayTag("Actor.State.Running");
+	return AbilitySystemComponent->HasMatchingGameplayTag(TagRunning);
 }

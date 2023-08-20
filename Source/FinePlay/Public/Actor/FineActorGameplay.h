@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
-#include "Data/FineActorData.h"
+#include "Data/FineDisplayData.h"
 #include "UObject/Object.h"
 #include "FineActorGameplay.generated.h"
 
@@ -20,35 +20,21 @@ class FINEPLAY_API UFineActorGameplay : public UActorComponent
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(BlueprintAssignable)
-	FOnHealthUpdated OnHealthUpdated;
-
-	FORCEINLINE const FFineActorData& GetActorData() const { return ActorData; }
+	FORCEINLINE const FFineDisplayData& GetDisplayData() const { return DisplayData; }
 
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-	UFUNCTION(BlueprintCallable)
-	void SetHealth(int32 NewHealth);
-
 	FORCEINLINE UFineLocalDatabaseComponent* GetLocalDatabaseComponent() const { return LocalDatabaseComponent; }
-	FORCEINLINE const FGameplayTagContainer& GetGameplayTags() { return GameplayTags; }
 
-	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "FineActorGameplay")
-	FString EntityName;
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "FineActorGameplay")
 	FName ActorName;
 
 private:
+
 	UPROPERTY(BlueprintReadOnly, Category = "FineActorGameplay", meta = (AllowPrivateAccess = "true"))
-	FFineActorData ActorData;
-
-	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	int32 Health;
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "FineActorGameplay", meta = (AllowPrivateAccess = "true"))
-	FGameplayTagContainer GameplayTags;
+	FFineDisplayData DisplayData;
 
 	UPROPERTY()
 	TObjectPtr<UFineLocalDatabaseComponent> LocalDatabaseComponent;

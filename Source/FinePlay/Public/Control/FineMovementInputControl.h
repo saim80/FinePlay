@@ -7,7 +7,9 @@
 #include "Components/ActorComponent.h"
 #include "FineMovementInputControl.generated.h"
 
+class UAbilitySystemComponent;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCursorEffectSpawned, const FVector&, Location);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnMovementStarted);
 
 struct FInputBindingHandle;
 class UInputAction;
@@ -36,6 +38,14 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnCursorEffectSpawned OnCursorEffectSpawned;
 
+	UPROPERTY(BlueprintAssignable)
+	FOnMovementStarted OnMovementStarted;
+
+	FORCEINLINE void SetRunActionInputID(const int32& InRunActionID)
+	{
+		RunActionInputID = InRunActionID;
+	}
+
 protected:
 	/** True if the controlled character should navigate to the mouse cursor. */
 	uint32 bMoveToMouseCursor : 1;
@@ -47,6 +57,10 @@ protected:
 	void OnTouchReleased();
 	void OnWalkTriggered(const FInputActionInstance& InputActionInstance);
 	void OnWalkReleased(const FInputActionInstance& InputActionInstance);
+	void OnRunKeyTriggered();
+	void OnRunKeyReleased();
+	void OnRunTouchTriggered();
+	void OnRunTouchReleased();
 
 	virtual void Activate(bool bReset) override;
 	virtual void Deactivate() override;
@@ -76,5 +90,18 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	UInputAction* WalkAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
+	UInputAction* RunKeyAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
+	UInputAction* RunTouchAction;
+
 	TArray<FInputBindingHandle> ActionBindings;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
+	int32 RunActionInputID = INDEX_NONE;
+
+	bool GetAbilitySystemComponent(UAbilitySystemComponent*& OutComponent);
+	static bool IsCharacterRunning(const UAbilitySystemComponent* AbilitySystemComponent);
+	FTimerHandle RunDisableTimerHandle;
 };
