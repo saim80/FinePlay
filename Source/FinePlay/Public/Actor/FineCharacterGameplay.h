@@ -8,6 +8,7 @@
 #include "UObject/Object.h"
 #include "FineCharacterGameplay.generated.h"
 
+struct FGameplayAbilitySpecHandle;
 class UFineCharacterAttributeSet;
 class UAbilitySystemComponent;
 
@@ -31,8 +32,18 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool IsInvincible();
 
+	UFUNCTION(BlueprintCallable, CallInEditor, Category = "FineCharacterGameplay")
+	void AddAbilityByClass(UClass* InClass, int32 InLevel, int32 InInputID);
+
 	UPROPERTY(BlueprintAssignable)
 	FOnCharacterDamageTaken OnCharacterDamageTaken;
+
+	float GetDistanceFromGroundStaticMesh();
+
+	UFUNCTION(BlueprintCallable, Category= "FineCharacterGameplay")
+	void AddLooseGameplayTagForAbilitySystem(const FGameplayTag& Tag);
+	UFUNCTION(BlueprintCallable, Category= "FineCharacterGameplay")
+	void RemoveLooseGameplayTagForAbilitySystem(const FGameplayTag& Tag);
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -45,9 +56,12 @@ protected:
 	void OnHealthChanged(const FOnAttributeChangeData& OnAttributeChangeData);
 	void OnMovementSpeedChanged(const FOnAttributeChangeData& OnAttributeChangeData);
 
+	void GiveDefaultAbilities();
+	void ClearAllAbilities();
+
 private:
 	UPROPERTY(meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
+	TWeakObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
 
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "FineCharacterGameplay", meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<UFineCharacterAttributeSet> AttributeSetClass;
@@ -60,33 +74,61 @@ private:
 	FDelegateHandle OnHealthUpdated;
 	FDelegateHandle OnMovementSpeedUpdated;
 
+	TArray<FGameplayAbilitySpecHandle> AbilityHandles;
+
 public:
 	// ------------------
 	// Gameplay Attributes
 	// ------------------
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	float GetHealth() const;
+	UFUNCTION(BlueprintCallable)
+	void SetHealth(float InHealth);
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	float GetMaxHealth() const;
+	UFUNCTION(BlueprintCallable)
+	void SetMaxHealth(float InMaxHealth);
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	float GetMana() const;
+	UFUNCTION(BlueprintCallable)
+	void SetMana(float InMana);
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	float GetMaxMana() const;
+	UFUNCTION(BlueprintCallable)
+	void SetMaxMana(float InMaxMana);
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	float GetMovementSpeed() const;
+	UFUNCTION(BlueprintCallable)
+	void SetMovementSpeed(float InMovementSpeed);
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	float GetMaxMovementSpeed() const;
+	UFUNCTION(BlueprintCallable)
+	void SetMaxMovementSpeed(float InMaxMovementSpeed);
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	float GetAttackPower() const;
+	UFUNCTION(BlueprintCallable)
+	void SetAttackPower(float InAttackPower);
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	float GetDefensePower() const;
+	UFUNCTION(BlueprintCallable)
+	void SetDefensePower(float InDefensePower);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	float GetStamina() const;
+	UFUNCTION(BlueprintCallable)
+	void SetStamina(float InStamina);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	float GetMaxStamina() const;
+	UFUNCTION(BlueprintCallable)
+	void SetMaxStamina(float InMaxStamina);
 
 	UFineCharacterAttributeSet* GetAttributeSet() const;
 };

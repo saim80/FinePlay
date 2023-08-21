@@ -6,7 +6,6 @@
 #include "GameFramework/Actor.h"
 #include "FineScene.generated.h"
 
-class UFineWidgetScreen;
 class UFineSceneLoop;
 
 /**
@@ -35,16 +34,17 @@ protected:
 	/// Called when the game ends or when destroyed
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Scene", meta = (AllowPrivateAccess = true))
-	UFineWidgetScreen* LoadingScreen;
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Scene")
+	void OnLoadingStarted();
 
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Scene")
+	void OnLoadingFinished();
 private:
 	friend class UFineSceneLoop;
 	TWeakObjectPtr<UFineSceneLoop> SceneLoop;
 
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Scene", meta = (AllowPrivateAccess = true))
 	FString PlayerStartTag;
-
 
 	/// Teleport the player pawn to the player start of this scene.
 	void TryTeleportToScene();

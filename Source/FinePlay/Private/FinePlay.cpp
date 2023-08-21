@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "FinePlay.h"
+#include "FinePlayLog.h"
 
 #define LOCTEXT_NAMESPACE "FFinePlayModule"
 
@@ -18,3 +19,4 @@ void FFinePlayModule::ShutdownModule()
 #undef LOCTEXT_NAMESPACE
 	
 IMPLEMENT_MODULE(FFinePlayModule, FinePlay)
+DEFINE_LOG_CATEGORY(LogFinePlay);

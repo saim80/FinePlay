@@ -28,6 +28,7 @@ public:
 	ATTRIBUTE_ACCESSORS(UFineCharacterAttributeSet, Health)
 	ATTRIBUTE_ACCESSORS(UFineCharacterAttributeSet, Mana)
 	ATTRIBUTE_ACCESSORS(UFineCharacterAttributeSet, MovementSpeed)
+	ATTRIBUTE_ACCESSORS(UFineCharacterAttributeSet, Stamina)
 	ATTRIBUTE_ACCESSORS(UFineCharacterAttributeSet, AttackPower)
 	ATTRIBUTE_ACCESSORS(UFineCharacterAttributeSet, DefensePower)
 	ATTRIBUTE_ACCESSORS(UFineCharacterAttributeSet, IncomingDamage)
@@ -38,6 +39,8 @@ public:
 	float MaxMana;
 	UPROPERTY(BlueprintReadOnly, Category = "AttributeSet")
 	float MaxMovementSpeed;
+	UPROPERTY(BlueprintReadOnly, Category = "AttributeSet")
+	float MaxStamina;
 
 	UPROPERTY(BlueprintReadOnly, Category = "AttributeSet")
 	FGameplayAttributeData Health;
@@ -51,6 +54,8 @@ public:
 	FGameplayAttributeData DefensePower;
 	UPROPERTY(BlueprintReadOnly, Category = "AttributeSet")
 	FGameplayAttributeData IncomingDamage;
+	UPROPERTY(BlueprintReadOnly, Category = "AttributeSet")
+	FGameplayAttributeData Stamina;
 
 protected:
 	virtual bool PreGameplayEffectExecute(struct FGameplayEffectModCallbackData& Data) override;

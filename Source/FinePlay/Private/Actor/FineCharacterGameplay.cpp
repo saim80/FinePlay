@@ -5,7 +5,9 @@
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
+#include "FinePlayLog.h"
 #include "Actor/FineCharacterAttributeSet.h"
+#include "Components/CapsuleComponent.h"
 #include "Data/FineDatabaseRecord.h"
 #include "Data/FineLocalDatabaseComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -33,6 +35,58 @@ bool UFineCharacterGameplay::IsInvincible()
 	return AbilitySystemComponent->HasMatchingGameplayTag(Tag);
 }
 
+void UFineCharacterGameplay::AddAbilityByClass(UClass* InClass, int32 InLevel, int32 InInputID)
+{
+	// Add ability to ability system.
+	const auto AbilitySystem = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(GetOwner());
+	const TSubclassOf<UGameplayAbility> AbilityClass = InClass;
+	const auto Handle = AbilitySystem->GiveAbility(FGameplayAbilitySpec(AbilityClass, InLevel, InInputID, this));
+	AbilityHandles.Add(Handle);
+
+	FP_LOG("Gave ability: %s, %i, %i", *InClass->GetName(), InLevel, InInputID);
+}
+
+float UFineCharacterGameplay::GetDistanceFromGroundStaticMesh()
+{
+	// Get distance from ground static mesh.
+	static const float MaxDistance = 1000.0f;
+	const auto Owner = GetOwner();
+	const auto Capsule = Owner->FindComponentByClass<UCapsuleComponent>();
+	const auto CapsuleHalfHeight = Capsule->GetScaledCapsuleHalfHeight();
+	const auto Start = Owner->GetActorLocation();
+	const auto ActorDownVector = Owner->GetActorUpVector() * -1.0f;
+	const auto End = Start + ActorDownVector * MaxDistance;
+	FHitResult HitResult;
+	FCollisionQueryParams CollisionQueryParams;
+	CollisionQueryParams.AddIgnoredActor(Owner);
+	const auto bHit = GetWorld()->LineTraceSingleByChannel(
+		HitResult, Start, End, ECC_Visibility, CollisionQueryParams);
+	if (bHit)
+	{
+		const auto FinalDistance = HitResult.Distance - CapsuleHalfHeight;
+		FP_VERBOSE("Distance from ground static mesh: %f", FinalDistance);
+		return FinalDistance;
+	}
+	FP_LOG("Distance from ground static mesh: %f (Max)", MaxDistance);
+	return MaxDistance;
+}
+
+void UFineCharacterGameplay::AddLooseGameplayTagForAbilitySystem(const FGameplayTag& Tag)
+{
+	if (AbilitySystemComponent.IsValid())
+	{
+		AbilitySystemComponent->AddLooseGameplayTag(Tag);
+	}
+}
+
+void UFineCharacterGameplay::RemoveLooseGameplayTagForAbilitySystem(const FGameplayTag& Tag)
+{
+	if (AbilitySystemComponent.IsValid())
+	{
+		AbilitySystemComponent->RemoveLooseGameplayTag(Tag);
+	}
+}
+
 void UFineCharacterGameplay::BeginPlay()
 {
 	Super::BeginPlay();
@@ -41,9 +95,9 @@ void UFineCharacterGameplay::BeginPlay()
 	const auto Owner = GetOwner();
 	AbilitySystemComponent = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Owner);
 
-	check(IsValid(AbilitySystemComponent));
-	auto AttributeSet = const_cast<UFineCharacterAttributeSet*>(AbilitySystemComponent->AddSet<
-		UFineCharacterAttributeSet>());
+	check(AbilitySystemComponent.IsValid());
+	const auto AttributeSet = NewObject<UFineCharacterAttributeSet>(Owner, AttributeSetClass);
+	AbilitySystemComponent->AddSpawnedAttribute(AttributeSet);
 
 	// Use local database component to get the record for the ability attribute set.
 	const auto Database = GetLocalDatabaseComponent();
@@ -52,7 +106,7 @@ void UFineCharacterGameplay::BeginPlay()
 		// database record from local database component
 		bool bSuccess = false;
 		const auto Record = Database->GetRecordByName(
-			TEXT("AbilityAttributeSet"), ActorName, bSuccess);
+			TEXT("CharacterAttributeSet"), ActorName, bSuccess);
 		if (bSuccess)
 		{
 			AttributeSet->InitHealth(Record.FloatFields[TEXT("Health")]);
@@ -63,8 +117,13 @@ void UFineCharacterGameplay::BeginPlay()
 			AttributeSet->MaxMovementSpeed = 1000.f;
 			AttributeSet->InitAttackPower(Record.FloatFields[TEXT("AttackPower")]);
 			AttributeSet->InitDefensePower(Record.FloatFields[TEXT("DefensePower")]);
+			AttributeSet->InitStamina(Record.FloatFields[TEXT("Stamina")]);
+			AttributeSet->MaxStamina = Record.FloatFields[TEXT("Stamina")];
 		}
 	}
+
+	GiveDefaultAbilities();
+
 	AbilitySystemComponent->AddLooseGameplayTag(
 		FGameplayTag::RequestGameplayTag(FName(TEXT("Actor.State.Alive"))));
 
@@ -77,6 +136,12 @@ void UFineCharacterGameplay::BeginPlay()
 	OnMovementSpeedUpdated = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
 		UFineCharacterAttributeSet::GetMovementSpeedAttribute()).AddUObject(
 		this, &UFineCharacterGameplay::OnMovementSpeedChanged);
+
+	// Apply stamina refill effect to periodically refill stamina.
+	const auto StaminaRefillClass = LoadClass<UGameplayEffect>(
+		this,TEXT("/FinePlay/Ability/GE_Refill_Stamina.GE_Refill_Stamina_C"));
+	AbilitySystemComponent->ApplyGameplayEffectToSelf(StaminaRefillClass->GetDefaultObject<UGameplayEffect>(), 1.0f,
+	                                                  AbilitySystemComponent->MakeEffectContext());
 }
 
 void UFineCharacterGameplay::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -117,9 +182,56 @@ void UFineCharacterGameplay::OnMovementSpeedChanged(const FOnAttributeChangeData
 	}
 }
 
+void UFineCharacterGameplay::GiveDefaultAbilities()
+{
+	// Fetch the list of records from "GameplayAbility" entity for the current actor.
+	const auto Database = GetLocalDatabaseComponent();
+	if (ensure(IsValid(Database)))
+	{
+		bool bSuccess = false;
+		const auto Records = Database->FilterRecords(
+			TEXT("GameplayAbility"), FString::Printf(TEXT("Name = '%s'"), *ActorName.ToString()), bSuccess);
+		if (bSuccess)
+		{
+			for (const auto& Record : Records)
+			{
+				const auto AbilityClassPath = Record.StringFields[TEXT("AbilityClass")];
+				const auto AbilityLevel = Record.IntFields[TEXT("Level")];
+				const auto InputID = Record.IntFields[TEXT("InputID")];
+
+				// Turn AbilityClassPath into TSubclass<UGameplayAbility>.
+				const FSoftClassPath SoftClassPath(AbilityClassPath);
+				const auto AbilityClass = SoftClassPath.TryLoadClass<UGameplayAbility>();
+
+				if (IsValid(AbilityClass))
+				{
+					AddAbilityByClass(AbilityClass, AbilityLevel, InputID);
+				}
+				else
+				{
+					FP_ERROR("Invalid ability class path: %s", *AbilityClassPath);
+				}
+			}
+		}
+		else
+		{
+			FP_LOG("GameplayAbility fetch failed.");
+		}
+	}
+}
+
 float UFineCharacterGameplay::GetHealth() const
 {
 	return GetAttributeSet()->GetHealth();
+}
+
+void UFineCharacterGameplay::SetHealth(float InHealth)
+{
+	// if value changed, update the attribute set.
+	if (GetHealth() != InHealth)
+	{
+		GetAttributeSet()->SetHealth(InHealth);
+	}
 }
 
 float UFineCharacterGameplay::GetMaxHealth() const
@@ -127,9 +239,27 @@ float UFineCharacterGameplay::GetMaxHealth() const
 	return GetAttributeSet()->MaxHealth;
 }
 
+void UFineCharacterGameplay::SetMaxHealth(float InMaxHealth)
+{
+	// if value changed, update the attribute set.
+	if (GetMaxHealth() != InMaxHealth)
+	{
+		GetAttributeSet()->MaxHealth = InMaxHealth;
+	}
+}
+
 float UFineCharacterGameplay::GetMana() const
 {
 	return GetAttributeSet()->GetMana();
+}
+
+void UFineCharacterGameplay::SetMana(float InMana)
+{
+	// if value changed, update the attribute set.
+	if (GetMana() != InMana)
+	{
+		GetAttributeSet()->SetMana(InMana);
+	}
 }
 
 float UFineCharacterGameplay::GetMaxMana() const
@@ -137,9 +267,27 @@ float UFineCharacterGameplay::GetMaxMana() const
 	return GetAttributeSet()->MaxMana;
 }
 
+void UFineCharacterGameplay::SetMaxMana(float InMaxMana)
+{
+	// if value changed, update the attribute set.
+	if (GetMaxMana() != InMaxMana)
+	{
+		GetAttributeSet()->MaxMana = InMaxMana;
+	}
+}
+
 float UFineCharacterGameplay::GetMovementSpeed() const
 {
 	return GetAttributeSet()->GetMovementSpeed();
+}
+
+void UFineCharacterGameplay::SetMovementSpeed(float InMovementSpeed)
+{
+	// if value changed, update the attribute set.
+	if (GetMovementSpeed() != InMovementSpeed)
+	{
+		GetAttributeSet()->SetMovementSpeed(InMovementSpeed);
+	}
 }
 
 float UFineCharacterGameplay::GetMaxMovementSpeed() const
@@ -147,9 +295,27 @@ float UFineCharacterGameplay::GetMaxMovementSpeed() const
 	return GetAttributeSet()->MaxMovementSpeed;
 }
 
+void UFineCharacterGameplay::SetMaxMovementSpeed(float InMaxMovementSpeed)
+{
+	// if value changed, update the attribute set.
+	if (GetMaxMovementSpeed() != InMaxMovementSpeed)
+	{
+		GetAttributeSet()->MaxMovementSpeed = InMaxMovementSpeed;
+	}
+}
+
 float UFineCharacterGameplay::GetAttackPower() const
 {
 	return GetAttributeSet()->GetAttackPower();
+}
+
+void UFineCharacterGameplay::SetAttackPower(float InAttackPower)
+{
+	// if value changed, update the attribute set.
+	if (GetAttackPower() != InAttackPower)
+	{
+		GetAttributeSet()->SetAttackPower(InAttackPower);
+	}
 }
 
 float UFineCharacterGameplay::GetDefensePower() const
@@ -157,8 +323,62 @@ float UFineCharacterGameplay::GetDefensePower() const
 	return GetAttributeSet()->GetDefensePower();
 }
 
+void UFineCharacterGameplay::SetDefensePower(float InDefensePower)
+{
+	// if value changed, update the attribute set.
+	if (GetDefensePower() != InDefensePower)
+	{
+		GetAttributeSet()->SetDefensePower(InDefensePower);
+	}
+}
+
+float UFineCharacterGameplay::GetStamina() const
+{
+	return GetAttributeSet()->GetStamina();
+}
+
+void UFineCharacterGameplay::SetStamina(float InStamina)
+{
+	// if value changed, update the attribute set.
+	if (GetStamina() != InStamina)
+	{
+		GetAttributeSet()->SetStamina(InStamina);
+	}
+}
+
+float UFineCharacterGameplay::GetMaxStamina() const
+{
+	return GetAttributeSet()->MaxStamina;
+}
+
+void UFineCharacterGameplay::SetMaxStamina(float InMaxStamina)
+{
+	// if value changed, update the attribute set.
+	if (GetMaxStamina() != InMaxStamina)
+	{
+		GetAttributeSet()->MaxStamina = InMaxStamina;
+	}
+}
+
 UFineCharacterAttributeSet* UFineCharacterGameplay::GetAttributeSet() const
 {
+	if (!AbilitySystemComponent.IsValid())
+	{
+		return nullptr;
+	}
+		
 	auto AttributeSet = const_cast<UAttributeSet*>(AbilitySystemComponent->GetAttributeSet(AttributeSetClass));
 	return Cast<UFineCharacterAttributeSet>(AttributeSet);
+}
+
+void UFineCharacterGameplay::ClearAllAbilities()
+{
+	const auto AbilitySystem = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(GetOwner());
+	for (const auto& Handle : AbilityHandles)
+	{
+		AbilitySystem->ClearAbility(Handle);
+	}
+	// Clear the ability handles.
+	AbilityHandles.Empty();
+	FP_LOG("All abilities cleared.");
 }

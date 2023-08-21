@@ -29,7 +29,6 @@ public class FinePlay : ModuleRules
 			{
 				"Core",
 				"FineBase", 
-				"FineWidget",
 				"Engine",
 				"GameplayTags",
 				"EnhancedInput", 

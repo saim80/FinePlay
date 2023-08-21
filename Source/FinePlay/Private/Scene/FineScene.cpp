@@ -3,7 +3,7 @@
 
 #include "Scene/FineScene.h"
 
-#include "FineWidgetScreen.h"
+#include "FinePlayLog.h"
 #include "GameFramework/GameModeBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "Utilities/FinePlayFunctionLibrary.h"
@@ -13,9 +13,6 @@ AFineScene::AFineScene(): Super()
 {
 	// Lifecycle is controlled by UFineSceneLoop, not world partition.
 	SetIsSpatiallyLoaded(false);
-
-	LoadingScreen = CreateDefaultSubobject<UFineWidgetScreen>(TEXT("LoadingScreen"));
-	LoadingScreen->SetAutoActivate(false);
 }
 
 void AFineScene::BeginPlay()
@@ -27,6 +24,16 @@ void AFineScene::BeginPlay()
 void AFineScene::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
+}
+
+void AFineScene::OnLoadingStarted_Implementation()
+{
+	FP_LOG("Loading started. %s", *GetPlayerStartTag());
+}
+
+void AFineScene::OnLoadingFinished_Implementation()
+{
+	FP_LOG("Loading finished. %s", *GetPlayerStartTag());
 }
 
 void AFineScene::TryTeleportToScene()
@@ -50,7 +57,7 @@ void AFineScene::TryTeleportToScene()
 		}
 		if (UFinePlayFunctionLibrary::IsStreamingNeeded(this))
 		{
-			LoadingScreen->SetActive(true);
+			OnLoadingStarted();
 			// Start timer with 0.1 second delay.
 			GetWorldTimerManager().SetTimer(LoadingScreenTimerHandle, this, &AFineScene::TryHideLoadingScreen, 0.1f,
 			                                true);
@@ -62,8 +69,8 @@ void AFineScene::TryHideLoadingScreen()
 {
 	if (UFinePlayFunctionLibrary::IsStreamingCompleted(this))
 	{
-		LoadingScreen->SetActive(false);
 		// Clear timer.
 		GetWorldTimerManager().ClearTimer(LoadingScreenTimerHandle);
+		OnLoadingFinished();
 	}
 }

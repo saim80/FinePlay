@@ -30,13 +30,9 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-	
+
 private:
-	UPROPERTY(BlueprintReadOnly, Category = "FinePaperCharacter", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "FinePaperCharacter", meta = (AllowPrivateAccess = "true"))
 	UAbilitySystemComponent* AbilitySystemComponent;
 
-	UPROPERTY(BlueprintReadOnly, Category = "FinePaperCharacter", meta = (AllowPrivateAccess = "true"))
-	UFineCharacterGameplay *CharacterGameplay;
-
-	TSubclassOf<UFineCharacterGameplay> GameplayClass;
 };

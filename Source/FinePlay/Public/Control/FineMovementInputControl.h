@@ -9,6 +9,7 @@
 
 class UAbilitySystemComponent;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCursorEffectSpawned, const FVector&, Location);
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnMovementStarted);
 
 struct FInputBindingHandle;
@@ -34,6 +35,7 @@ public:
 
 	virtual void SetupInputComponent();
 	virtual void TearDownInputComponent();
+	FORCEINLINE const int32& GetRunActionInputID() const { return RunActionInputID; }
 
 	UPROPERTY(BlueprintAssignable)
 	FOnCursorEffectSpawned OnCursorEffectSpawned;
@@ -44,6 +46,11 @@ public:
 	FORCEINLINE void SetRunActionInputID(const int32& InRunActionID)
 	{
 		RunActionInputID = InRunActionID;
+	}
+
+	FORCEINLINE void SetJumpActionInputID(const int32& InJumpActionID)
+	{
+		JumpActionInputID = InJumpActionID;
 	}
 
 protected:
@@ -61,11 +68,14 @@ protected:
 	void OnRunKeyReleased();
 	void OnRunTouchTriggered();
 	void OnRunTouchReleased();
+	void OnJumpTriggered();
+	void OnJumpReleased();
 
 	virtual void Activate(bool bReset) override;
 	virtual void Deactivate() override;
 
 	virtual void SpawnCursorEffect(const FVector& Location);
+
 private:
 	/// Used to remember the destination of the last movement input.
 	FVector CachedDestination;
@@ -96,12 +106,21 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	UInputAction* RunTouchAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
+	UInputAction* JumpAction;
+
 	TArray<FInputBindingHandle> ActionBindings;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	int32 RunActionInputID = INDEX_NONE;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
+	int32 JumpActionInputID = INDEX_NONE;
+
 	bool GetAbilitySystemComponent(UAbilitySystemComponent*& OutComponent);
 	static bool IsCharacterRunning(const UAbilitySystemComponent* AbilitySystemComponent);
+	static bool IsCharacterJumping(const UAbilitySystemComponent* AbilitySystemComponent);
 	FTimerHandle RunDisableTimerHandle;
+
+	void UpdateAddMovementInput();
 };

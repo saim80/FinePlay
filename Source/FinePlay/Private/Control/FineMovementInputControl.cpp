@@ -7,7 +7,9 @@
 #include "AbilitySystemComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "FinePlayLog.h"
 #include "NiagaraFunctionLibrary.h"
+#include "Actor/FineCharacterGameplay.h"
 #include "Blueprint/AIBlueprintHelperLibrary.h"
 
 
@@ -93,6 +95,16 @@ void UFineMovementInputControl::SetupInputComponent()
 		                                                      &UFineMovementInputControl::OnRunTouchReleased));
 		ActionBindings.Add(EnhancedInputComponent->BindAction(RunTouchAction, ETriggerEvent::Canceled, this,
 		                                                      &UFineMovementInputControl::OnRunTouchReleased));
+
+		// Set up jump input events.
+		ActionBindings.Add(EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this,
+		                                                      &UFineMovementInputControl::OnInputStarted));
+		ActionBindings.Add(EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this,
+		                                                      &UFineMovementInputControl::OnJumpTriggered));
+		ActionBindings.Add(EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this,
+		                                                      &UFineMovementInputControl::OnJumpReleased));
+		ActionBindings.Add(EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Canceled, this,
+		                                                      &UFineMovementInputControl::OnJumpReleased));
 	}
 }
 
@@ -152,13 +164,7 @@ void UFineMovementInputControl::OnSetDestinationTriggered()
 		CachedDestination = Hit.Location;
 	}
 
-	// Move towards mouse pointer or touch
-	APawn* ControlledPawn = PlayerController->GetPawn();
-	if (ControlledPawn != nullptr)
-	{
-		FVector WorldDirection = (CachedDestination - ControlledPawn->GetActorLocation()).GetSafeNormal();
-		ControlledPawn->AddMovementInput(WorldDirection, 1.0, false);
-	}
+	UpdateAddMovementInput();
 }
 
 void UFineMovementInputControl::OnSetDestinationReleased()
@@ -192,16 +198,16 @@ void UFineMovementInputControl::OnWalkTriggered(const FInputActionInstance& Inpu
 	// Get input value
 	const FVector2D InputValue = InputActionInstance.GetValue().Get<FVector2D>();
 
-	CachedDestination.X = InputValue.X;
-	CachedDestination.Y = InputValue.Y;
-
-	// Add movement input to the controller.
+	// Update cached destination by treating the input value as a direction from the current position.
 	const auto PlayerController = CastChecked<APlayerController>(GetOwner());
-	APawn* ControlledPawn = PlayerController->GetPawn();
-	if (ControlledPawn != nullptr)
-	{
-		ControlledPawn->AddMovementInput(CachedDestination, 1.0, false);
-	}
+	const FVector CurrentLocation = PlayerController->GetPawn()->GetActorLocation();
+	const FVector2D InputDirection = InputValue.GetSafeNormal();
+	const FVector InputDirection3D = FVector(InputDirection, 0.f);
+	constexpr auto WalkInputMagnitude = 100.0f;
+	const FVector NewDestination = CurrentLocation + InputDirection3D * WalkInputMagnitude;
+	CachedDestination = NewDestination;
+
+	UpdateAddMovementInput();
 }
 
 void UFineMovementInputControl::OnWalkReleased(const FInputActionInstance& InputActionInstance)
@@ -213,7 +219,7 @@ void UFineMovementInputControl::OnRunKeyTriggered()
 {
 	// clear run disable timer.
 	GetWorld()->GetTimerManager().ClearTimer(RunDisableTimerHandle);
-	
+
 	UAbilitySystemComponent* AbilitySystemComponent;
 	if (!GetAbilitySystemComponent(AbilitySystemComponent))
 	{
@@ -289,6 +295,33 @@ void UFineMovementInputControl::OnRunTouchReleased()
 	else
 	{
 		OnRunKeyReleased();
+	}
+}
+
+void UFineMovementInputControl::OnJumpTriggered()
+{
+	UAbilitySystemComponent* AbilitySystemComponent;
+	if (!GetAbilitySystemComponent(AbilitySystemComponent))
+	{
+		return;
+	}
+	if (!IsCharacterJumping(AbilitySystemComponent))
+	{
+		AbilitySystemComponent->PressInputID(JumpActionInputID);
+		FP_LOG("Jump Triggered");
+	}
+}
+
+void UFineMovementInputControl::OnJumpReleased()
+{
+	UAbilitySystemComponent* AbilitySystemComponent;
+	if (!GetAbilitySystemComponent(AbilitySystemComponent))
+	{
+		return;
+	}
+	if (IsCharacterJumping(AbilitySystemComponent))
+	{
+		AbilitySystemComponent->ReleaseInputID(JumpActionInputID);
 	}
 }
 
@@ -368,4 +401,35 @@ bool UFineMovementInputControl::IsCharacterRunning(const UAbilitySystemComponent
 	// Check if the ability system already has Actor.State.Running tag.
 	const auto TagRunning = FGameplayTag::RequestGameplayTag("Actor.State.Running");
 	return AbilitySystemComponent->HasMatchingGameplayTag(TagRunning);
+}
+
+bool UFineMovementInputControl::IsCharacterJumping(const UAbilitySystemComponent* AbilitySystemComponent)
+{
+	const auto TagRunning = FGameplayTag::RequestGameplayTag("Actor.State.Jumping");
+	return AbilitySystemComponent->HasMatchingGameplayTag(TagRunning);
+}
+
+void UFineMovementInputControl::UpdateAddMovementInput()
+{
+	const auto PlayerController = CastChecked<APlayerController>(GetOwner());
+	// Move towards mouse pointer or touch
+	APawn* ControlledPawn = PlayerController->GetPawn();
+	const auto AbilitySystemComponent = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(ControlledPawn);
+	if (IsCharacterJumping(AbilitySystemComponent))
+	{
+		return;
+	}
+	if (ControlledPawn != nullptr)
+	{
+		// Don't add input if the character is jumping.
+		// Get character gameplay component
+		const auto CharacterGameplay = ControlledPawn->FindComponentByClass<UFineCharacterGameplay>();
+		const auto DistanceFromGround = CharacterGameplay->GetDistanceFromGroundStaticMesh();
+		if (DistanceFromGround > 5.f)
+		{
+			return;
+		}
+		FVector WorldDirection = (CachedDestination - ControlledPawn->GetActorLocation()).GetSafeNormal();
+		ControlledPawn->AddMovementInput(WorldDirection, 1.0, false);
+	}
 }

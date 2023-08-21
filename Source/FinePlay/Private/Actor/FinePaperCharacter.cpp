@@ -12,9 +12,6 @@ AFinePaperCharacter::AFinePaperCharacter(): Super()
 {
 	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
 	AbilitySystemComponent->SetIsReplicated(true);
-
-	CharacterGameplay = Cast<UFineCharacterGameplay>(CreateDefaultSubobject(
-		TEXT("CharacterGameplay"), GameplayClass, GameplayClass, true, false));
 }
 
 void AFinePaperCharacter::BeginPlay()
