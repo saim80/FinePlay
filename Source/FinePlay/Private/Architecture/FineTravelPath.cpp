@@ -27,18 +27,6 @@ AFineTravelPath::AFineTravelPath(): Super()
 	}
 }
 
-void AFineTravelPath::HandleTravelPointOverlap(AActor* Actor, UPrimitiveComponent* PrimitiveComponent)
-{
-	if (!IsInUse())
-	{
-		return;
-	}
-	if (!CapturedCharacters.Contains(Actor))
-	{
-		return;
-	}
-}
-
 void AFineTravelPath::CaptureActor(AActor* Actor)
 {
 	CapturedCharacters.Add(Actor);
@@ -118,11 +106,7 @@ void AFineTravelPath::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, A
 		FP_LOG("Ignored actor: %s", *OtherActor->GetName());
 		return;
 	}
-	if (OverlappedComponent == PointA || OverlappedComponent == PointB)
-	{
-		HandleTravelPointOverlap(OtherActor, OverlappedComponent);
-	}
-	else if (OverlappedComponent == EntranceA || OverlappedComponent == EntranceB)
+	if (OverlappedComponent == EntranceA || OverlappedComponent == EntranceB)
 	{
 		HandleEntranceOverlap(OtherActor, OverlappedComponent);
 	}

@@ -100,7 +100,6 @@ public:
 	bool CanAcceptTravelers() const { return CapturedCharacters.Num() < Capacity; }
 
 protected:
-	void HandleTravelPointOverlap(AActor* Actor, UPrimitiveComponent* PrimitiveComponent);
 	void CaptureActor(AActor* Actor);
 	void ReleaseActor(AActor* Actor);
 	void HandleEntranceOverlap(AActor* Actor, UPrimitiveComponent* PrimitiveComponent);
