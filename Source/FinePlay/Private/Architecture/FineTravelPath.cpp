@@ -1,4 +1,4 @@
-#include "FineTravelPath.h"
+#include "Architecture/FineTravelPath.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
