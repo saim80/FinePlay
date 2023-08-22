@@ -7,6 +7,7 @@
 #include "Components/ActorComponent.h"
 #include "FineMovementInputControl.generated.h"
 
+class UFineCharacterGameplay;
 class UAbilitySystemComponent;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCursorEffectSpawned, const FVector&, Location);
 
@@ -120,8 +121,8 @@ private:
 	int32 JumpActionInputID = INDEX_NONE;
 
 	bool GetAbilitySystemComponent(UAbilitySystemComponent*& OutComponent);
-	static bool IsCharacterRunning(const UAbilitySystemComponent* AbilitySystemComponent);
-	static bool IsCharacterJumping(const UAbilitySystemComponent* AbilitySystemComponent);
+	bool IsCharacterRunning();
+	bool IsCharacterJumping();
 	FTimerHandle RunDisableTimerHandle;
 
 	void UpdateAddMovementInput();
@@ -130,4 +131,9 @@ private:
 	// Movement
 	// --------------------
 	FTimerHandle MovementTimerHandle;
+
+	// --------------------
+	// Utility
+	// --------------------
+	UFineCharacterGameplay *GetCharacterGameplay() const;
 };

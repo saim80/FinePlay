@@ -279,26 +279,26 @@ void UFineMovementInputControl::OnRunKeyTriggered()
 	// clear run disable timer.
 	GetWorld()->GetTimerManager().ClearTimer(RunDisableTimerHandle);
 
-	UAbilitySystemComponent* AbilitySystemComponent;
-	if (!GetAbilitySystemComponent(AbilitySystemComponent))
+	if (!IsCharacterRunning())
 	{
-		return;
-	}
-	if (!IsCharacterRunning(AbilitySystemComponent))
-	{
+		UAbilitySystemComponent* AbilitySystemComponent;
+		if (!GetAbilitySystemComponent(AbilitySystemComponent))
+		{
+			return;
+		}
 		AbilitySystemComponent->PressInputID(RunActionInputID);
 	}
 }
 
 void UFineMovementInputControl::OnRunKeyReleased()
 {
-	UAbilitySystemComponent* AbilitySystemComponent;
-	if (!GetAbilitySystemComponent(AbilitySystemComponent))
+	if (IsCharacterRunning())
 	{
-		return;
-	}
-	if (IsCharacterRunning(AbilitySystemComponent))
-	{
+		UAbilitySystemComponent* AbilitySystemComponent;
+		if (!GetAbilitySystemComponent(AbilitySystemComponent))
+		{
+			return;
+		}
 		AbilitySystemComponent->ReleaseInputID(RunActionInputID);
 	}
 }
@@ -325,12 +325,7 @@ void UFineMovementInputControl::OnRunTouchReleased()
 			}
 			const auto This = WeakThis.Get();
 			// Check if player is still running
-			UAbilitySystemComponent* AbilitySystemComponent;
-			if (!This->GetAbilitySystemComponent(AbilitySystemComponent))
-			{
-				return;
-			}
-			if (!This->IsCharacterRunning(AbilitySystemComponent))
+			if (!This->IsCharacterRunning())
 			{
 				// clear timer
 				This->GetWorld()->GetTimerManager().ClearTimer(This->RunDisableTimerHandle);
@@ -359,13 +354,13 @@ void UFineMovementInputControl::OnRunTouchReleased()
 
 void UFineMovementInputControl::OnJumpTriggered()
 {
-	UAbilitySystemComponent* AbilitySystemComponent;
-	if (!GetAbilitySystemComponent(AbilitySystemComponent))
+	if (!IsCharacterJumping())
 	{
-		return;
-	}
-	if (!IsCharacterJumping(AbilitySystemComponent))
-	{
+		UAbilitySystemComponent* AbilitySystemComponent;
+		if (!GetAbilitySystemComponent(AbilitySystemComponent))
+		{
+			return;
+		}
 		AbilitySystemComponent->PressInputID(JumpActionInputID);
 		FP_LOG("Jump Triggered");
 	}
@@ -373,13 +368,13 @@ void UFineMovementInputControl::OnJumpTriggered()
 
 void UFineMovementInputControl::OnJumpReleased()
 {
-	UAbilitySystemComponent* AbilitySystemComponent;
-	if (!GetAbilitySystemComponent(AbilitySystemComponent))
+	if (IsCharacterJumping())
 	{
-		return;
-	}
-	if (IsCharacterJumping(AbilitySystemComponent))
-	{
+		UAbilitySystemComponent* AbilitySystemComponent;
+		if (!GetAbilitySystemComponent(AbilitySystemComponent))
+		{
+			return;
+		}
 		AbilitySystemComponent->ReleaseInputID(JumpActionInputID);
 	}
 }
@@ -455,29 +450,39 @@ bool UFineMovementInputControl::GetAbilitySystemComponent(OUT UAbilitySystemComp
 	return true;
 }
 
-bool UFineMovementInputControl::IsCharacterRunning(const UAbilitySystemComponent* AbilitySystemComponent)
+bool UFineMovementInputControl::IsCharacterRunning()
 {
-	// Check if the ability system already has Actor.State.Running tag.
-	const auto TagRunning = FGameplayTag::RequestGameplayTag("Actor.State.Running");
+	UAbilitySystemComponent* AbilitySystemComponent;
+	if (!GetAbilitySystemComponent(AbilitySystemComponent))
+	{
+		return false;
+	}
+	const auto CharacterGameplay = GetCharacterGameplay();
+	const auto TagRunning = FGameplayTag::RequestGameplayTag(CharacterGameplay->RunGameplayTagName);
 	return AbilitySystemComponent->HasMatchingGameplayTag(TagRunning);
 }
 
-bool UFineMovementInputControl::IsCharacterJumping(const UAbilitySystemComponent* AbilitySystemComponent)
+bool UFineMovementInputControl::IsCharacterJumping()
 {
-	const auto TagRunning = FGameplayTag::RequestGameplayTag("Actor.State.Jumping");
-	return AbilitySystemComponent->HasMatchingGameplayTag(TagRunning);
+	UAbilitySystemComponent* AbilitySystemComponent;
+	if (!GetAbilitySystemComponent(AbilitySystemComponent))
+	{
+		return false;
+	}
+	const auto CharacterGameplay = GetCharacterGameplay();
+	const auto TagJumping = FGameplayTag::RequestGameplayTag(CharacterGameplay->JumpGameplayTagName);
+	return AbilitySystemComponent->HasMatchingGameplayTag(TagJumping);
 }
 
 void UFineMovementInputControl::UpdateAddMovementInput()
 {
-	const auto PlayerController = CastChecked<APlayerController>(GetOwner());
 	// Move towards mouse pointer or touch
-	APawn* ControlledPawn = PlayerController->GetPawn();
-	const auto AbilitySystemComponent = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(ControlledPawn);
-	if (IsCharacterJumping(AbilitySystemComponent))
+	if (IsCharacterJumping())
 	{
 		return;
 	}
+	const auto PlayerController = CastChecked<APlayerController>(GetOwner());
+	APawn* ControlledPawn = PlayerController->GetPawn();
 	if (ControlledPawn != nullptr)
 	{
 		// Don't add input if the character is jumping.
@@ -491,4 +496,19 @@ void UFineMovementInputControl::UpdateAddMovementInput()
 		FVector WorldDirection = (CachedDestination - ControlledPawn->GetActorLocation()).GetSafeNormal();
 		ControlledPawn->AddMovementInput(WorldDirection, 1.0, false);
 	}
+}
+
+UFineCharacterGameplay* UFineMovementInputControl::GetCharacterGameplay() const
+{
+	APawn* ControlledPawn = CastChecked<APlayerController>(GetOwner())->GetPawn();
+	if (ControlledPawn == nullptr)
+	{
+		return nullptr;
+	}
+	const auto CharacterGameplay = ControlledPawn->FindComponentByClass<UFineCharacterGameplay>();
+	if (CharacterGameplay == nullptr)
+	{
+		return nullptr;
+	}
+	return CharacterGameplay;
 }

@@ -48,6 +48,16 @@ public:
 	void AddLooseGameplayTagForAbilitySystem(const FGameplayTag& Tag);
 	UFUNCTION(BlueprintCallable, Category= "FineCharacterGameplay")
 	void RemoveLooseGameplayTagForAbilitySystem(const FGameplayTag& Tag);
+	
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "FineCharacterGameplay", meta = (AllowPrivateAccess = "true"))
+	FName AliveGameplayTagName;
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "FineCharacterGameplay", meta = (AllowPrivateAccess = "true"))
+	FName InvincibleGameplayTagName;
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "FineCharacterGameplay", meta = (AllowPrivateAccess = "true"))
+	FName JumpGameplayTagName;
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "FineCharacterGameplay", meta = (AllowPrivateAccess = "true"))
+	FName RunGameplayTagName;
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -73,11 +83,6 @@ private:
 
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "FineCharacterGameplay", meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<UFineCharacterAttributeSet> AttributeSetClass;
-
-	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "FineCharacterGameplay", meta = (AllowPrivateAccess = "true"))
-	FName AliveGameplayTagName;
-	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "FineCharacterGameplay", meta = (AllowPrivateAccess = "true"))
-	FName InvincibleGameplayTagName;
 
 	FDelegateHandle OnHealthUpdated;
 	FDelegateHandle OnMovementSpeedUpdated;

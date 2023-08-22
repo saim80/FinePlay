@@ -19,6 +19,8 @@ UFineCharacterGameplay::UFineCharacterGameplay(): Super()
 	AttributeSetClass = UFineCharacterAttributeSet::StaticClass();
 	AliveGameplayTagName = TEXT("Actor.State.Alive");
 	InvincibleGameplayTagName = TEXT("Actor.State.Invincible");
+	JumpGameplayTagName = TEXT("Actor.State.Jumping");
+	RunGameplayTagName = TEXT("Actor.State.Running");
 }
 
 bool UFineCharacterGameplay::IsAlive()
