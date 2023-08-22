@@ -44,5 +44,11 @@ bool UFinePlayFunctionLibrary::IsStreamingNeeded(const UObject* WorldContextObje
 {
 	// Get player controller.
 	const auto PlayerController = UGameplayStatics::GetPlayerController(WorldContextObject, 0);
+	// Try to get world partition.
+	const auto WorldPartition = WorldContextObject->GetWorld()->GetWorldPartition();
+	if (IsValid(WorldPartition) == false)
+	{
+		return false;
+	}
 	return PlayerController->IsStreamingSourceEnabled() && IsStreamingCompleted(WorldContextObject) == false;
 }

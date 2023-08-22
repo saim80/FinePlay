@@ -6,6 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "FineScene.generated.h"
 
+class UFineCountedFlag;
 class UFineSceneLoop;
 
 /**
@@ -27,6 +28,11 @@ public:
 	/// Player start tag to use for this scene.
 	FORCEINLINE const FString& GetPlayerStartTag() const { return PlayerStartTag; }
 
+	FORCEINLINE bool RequiresPlayerData() const { return bRequiresPlayerData; }
+	FORCEINLINE bool RequiresGameData() const { return bRequiresGameData; }
+
+	FORCEINLINE bool NeedsToLoadPlayerData() const { return RequiresPlayerData() && !IsPlayerDataLoaded(); }
+	FORCEINLINE bool NeedsToLoadGameData() const { return RequiresGameData() && !IsGameDataLoaded(); }
 protected:
 	/// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -39,6 +45,14 @@ protected:
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Scene")
 	void OnLoadingFinished();
+
+	UFUNCTION()
+	void UpdateLoadingScreenVisibility(UFineCountedFlag* Flag, const bool bNewFlag);
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Scene", meta = (AllowPrivateAccess = true))
+	bool bRequiresPlayerData = false;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Scene", meta = (AllowPrivateAccess = true))
+	bool bRequiresGameData = true;
 private:
 	friend class UFineSceneLoop;
 	TWeakObjectPtr<UFineSceneLoop> SceneLoop;
@@ -52,4 +66,18 @@ private:
 	void TryHideLoadingScreen();
 
 	FTimerHandle LoadingScreenTimerHandle;
+
+	bool IsPlayerDataLoaded() const;
+	bool IsGameDataLoaded() const;
+	
+	UFUNCTION()
+	void OnGameDataLoaded();
+	UFUNCTION()
+	void OnPlayerDataLoaded();
+	
+	void LoadGameData();
+	void LoadPlayerData();
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Scene", meta = (AllowPrivateAccess = true))
+	UFineCountedFlag* LoadingScreenCountedFlag;
 };
