@@ -11,6 +11,7 @@
 #include "NiagaraFunctionLibrary.h"
 #include "Actor/FineCharacterGameplay.h"
 #include "Blueprint/AIBlueprintHelperLibrary.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 
 // Sets default values for this component's properties
@@ -128,6 +129,64 @@ void UFineMovementInputControl::TearDownInputComponent()
 			EnhancedInputComponent->RemoveBinding(ActionBinding);
 		}
 	}
+}
+
+void UFineMovementInputControl::BeginPlay()
+{
+	Super::BeginPlay();
+	// Create weak reference to this.
+	const auto WeakThis = TWeakObjectPtr<UFineMovementInputControl>(this);
+	// Set timer movement check
+	auto& TimerManager = GetWorld()->GetTimerManager();
+	TimerManager.SetTimer(MovementTimerHandle,
+	                      [=]()
+	                      {
+		                      if (WeakThis.IsValid())
+		                      {
+			                      const auto This = WeakThis.Get();
+			                      // Get character from controlled pawn.
+			                      const auto PlayerController = CastChecked<APlayerController>(
+				                      This->GetOwner());
+			                      const auto ControlledPawn = PlayerController->GetPawn();
+			                      if (ControlledPawn)
+			                      {
+				                      const auto CharacterMovement = ControlledPawn->
+					                      FindComponentByClass<UCharacterMovementComponent>();
+				                      static const auto MovingTag = FGameplayTag::RequestGameplayTag(
+					                      "Actor.State.Moving");
+				                      UAbilitySystemComponent* AbilitySystem;
+				                      if (!GetAbilitySystemComponent(AbilitySystem))
+				                      {
+					                      return;
+				                      }
+				                      // Check if character is moving.
+				                      if (FMath::IsNearlyEqual(CharacterMovement->Velocity.Size(), 0.0f, 0.1f))
+				                      {
+					                      if (AbilitySystem->HasMatchingGameplayTag(MovingTag))
+					                      {
+						                      AbilitySystem->RemoveLooseGameplayTag(MovingTag);
+						                      FP_LOG("Removing moving tag.");
+					                      }
+				                      }
+				                      else
+				                      {
+					                      if (!AbilitySystem->HasMatchingGameplayTag(MovingTag))
+					                      {
+						                      // Add Actor.State.Moving tag to ability system.
+						                      AbilitySystem->AddLooseGameplayTag(MovingTag);
+						                      FP_LOG("Adding moving tag.");
+					                      }
+				                      }
+			                      }
+		                      }
+	                      }, 0.1f, true);
+}
+
+void UFineMovementInputControl::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	// remove movement timer
+	GetWorld()->GetTimerManager().ClearTimer(MovementTimerHandle);
+	Super::EndPlay(EndPlayReason);
 }
 
 void UFineMovementInputControl::OnInputStarted()

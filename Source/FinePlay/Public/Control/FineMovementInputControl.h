@@ -54,6 +54,8 @@ public:
 	}
 
 protected:
+	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	/** True if the controlled character should navigate to the mouse cursor. */
 	uint32 bMoveToMouseCursor : 1;
 
@@ -123,4 +125,9 @@ private:
 	FTimerHandle RunDisableTimerHandle;
 
 	void UpdateAddMovementInput();
+
+	// --------------------
+	// Movement
+	// --------------------
+	FTimerHandle MovementTimerHandle;
 };

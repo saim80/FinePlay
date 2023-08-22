@@ -38,7 +38,11 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnCharacterDamageTaken OnCharacterDamageTaken;
 
+	UFUNCTION(BlueprintCallable, Category = "FineCharacterGameplay")
 	float GetDistanceFromGroundStaticMesh();
+	
+	UFUNCTION(BlueprintCallable, Category = "FineCharacterGameplay")
+	FVector GetFeetLocation() const;
 
 	UFUNCTION(BlueprintCallable, Category= "FineCharacterGameplay")
 	void AddLooseGameplayTagForAbilitySystem(const FGameplayTag& Tag);
@@ -59,6 +63,10 @@ protected:
 	void GiveDefaultAbilities();
 	void ClearAllAbilities();
 
+	FORCEINLINE UAbilitySystemComponent* GetAbilitySystemComponent() const
+	{
+		return AbilitySystemComponent.Get();
+	}
 private:
 	UPROPERTY(meta = (AllowPrivateAccess = "true"))
 	TWeakObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;

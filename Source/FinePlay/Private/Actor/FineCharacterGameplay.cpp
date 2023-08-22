@@ -71,6 +71,23 @@ float UFineCharacterGameplay::GetDistanceFromGroundStaticMesh()
 	return MaxDistance;
 }
 
+FVector UFineCharacterGameplay::GetFeetLocation() const
+{
+	// get owner
+	const auto Owner = GetOwner();
+	// get capsule
+	const auto Capsule = Owner->FindComponentByClass<UCapsuleComponent>();
+	// get capsule half height
+	const auto CapsuleHalfHeight = Capsule->GetScaledCapsuleHalfHeight();
+	// get actor location
+	const auto ActorLocation = Owner->GetActorLocation();
+	// get actor up vector
+	const auto ActorUpVector = Owner->GetActorUpVector();
+	// get feet location
+	const auto FeetLocation = ActorLocation - ActorUpVector * CapsuleHalfHeight;
+	return FeetLocation;
+}
+
 void UFineCharacterGameplay::AddLooseGameplayTagForAbilitySystem(const FGameplayTag& Tag)
 {
 	if (AbilitySystemComponent.IsValid())
