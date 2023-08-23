@@ -3,6 +3,8 @@
 
 #include "Utilities/FinePlayFunctionLibrary.h"
 
+#include "FineCountedFlag.h"
+#include "GameFramework/Character.h"
 #include "GameFramework/GameStateBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "Scene/FineSceneLoop.h"
@@ -51,4 +53,33 @@ bool UFinePlayFunctionLibrary::IsStreamingNeeded(const UObject* WorldContextObje
 		return false;
 	}
 	return PlayerController->IsStreamingSourceEnabled() && IsStreamingCompleted(WorldContextObject) == false;
+}
+
+void UFinePlayFunctionLibrary::SetUserInputEnabled(AActor* Actor, const bool bEnabled)
+{
+	const auto Character = Cast<ACharacter>(Actor);
+	if (IsValid(Character))
+	{
+		const auto Controller = Character->GetController();
+		if (IsValid(Controller))
+		{
+			const auto Flag = Controller->FindComponentByClass<UFineCountedFlag>();
+			Flag->SetEnabled(bEnabled);
+		}
+	}
+}
+
+bool UFinePlayFunctionLibrary::GetUserInputEnabled(AActor* Actor)
+{
+	const auto Character = Cast<ACharacter>(Actor);
+	if (IsValid(Character))
+	{
+		const auto Controller = Character->GetController();
+		if (IsValid(Controller))
+		{
+			const auto Flag = Controller->FindComponentByClass<UFineCountedFlag>();
+			return Flag->IsEnabled();
+		}
+	}
+	return false;
 }

@@ -39,7 +39,7 @@ public:
 	FOnCharacterDamageTaken OnCharacterDamageTaken;
 
 	UFUNCTION(BlueprintCallable, Category = "FineCharacterGameplay")
-	float GetDistanceFromGroundStaticMesh();
+	float GetDistanceFromGroundStaticMesh(const FVector& Offset);
 	
 	UFUNCTION(BlueprintCallable, Category = "FineCharacterGameplay")
 	FVector GetFeetLocation() const;

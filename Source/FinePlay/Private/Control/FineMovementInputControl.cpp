@@ -3,10 +3,8 @@
 
 #include "Control/FineMovementInputControl.h"
 
-#include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
 #include "EnhancedInputComponent.h"
-#include "EnhancedInputSubsystems.h"
 #include "FinePlayLog.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Actor/FineCharacterGameplay.h"
@@ -27,16 +25,13 @@ UFineMovementInputControl::UFineMovementInputControl(): Super()
 
 void UFineMovementInputControl::SetupInputComponent()
 {
+	Super::SetupInputComponent();
 	// Get owner as player controller
 	const auto PlayerController = CastChecked<APlayerController>(GetOwner());
 
 	// Get input component from player controller
 	const auto InputComponent = PlayerController->InputComponent;
 	if (!IsValid(InputComponent))
-	{
-		return;
-	}
-	if (!ActionBindings.IsEmpty())
 	{
 		return;
 	}
@@ -109,28 +104,6 @@ void UFineMovementInputControl::SetupInputComponent()
 	}
 }
 
-void UFineMovementInputControl::TearDownInputComponent()
-{
-	const auto PlayerController = CastChecked<APlayerController>(GetOwner());
-	const auto InputComponent = PlayerController->InputComponent;
-	if (ActionBindings.IsEmpty())
-	{
-		return;
-	}
-	if (!IsValid(InputComponent))
-	{
-		return;
-	}
-	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(InputComponent))
-	{
-		// iterate ActionBindings and remove them from the input component
-		for (const auto& ActionBinding : ActionBindings)
-		{
-			EnhancedInputComponent->RemoveBinding(ActionBinding);
-		}
-	}
-}
-
 void UFineMovementInputControl::BeginPlay()
 {
 	Super::BeginPlay();
@@ -165,7 +138,7 @@ void UFineMovementInputControl::BeginPlay()
 					                      if (AbilitySystem->HasMatchingGameplayTag(MovingTag))
 					                      {
 						                      AbilitySystem->RemoveLooseGameplayTag(MovingTag);
-						                      FP_LOG("Removing moving tag.");
+						                      FP_VERBOSE("Removing moving tag.");
 					                      }
 				                      }
 				                      else
@@ -174,7 +147,7 @@ void UFineMovementInputControl::BeginPlay()
 					                      {
 						                      // Add Actor.State.Moving tag to ability system.
 						                      AbilitySystem->AddLooseGameplayTag(MovingTag);
-						                      FP_LOG("Adding moving tag.");
+						                      FP_VERBOSE("Adding moving tag.");
 					                      }
 				                      }
 			                      }
@@ -379,75 +352,17 @@ void UFineMovementInputControl::OnJumpReleased()
 	}
 }
 
-void UFineMovementInputControl::Activate(bool bReset)
-{
-	Super::Activate(bReset);
-
-	// Get owner as player controller
-	const auto PlayerController = CastChecked<APlayerController>(GetOwner());
-	const auto LocalPlayer = PlayerController->GetLocalPlayer();
-	if (IsValid(LocalPlayer))
-	{
-		const auto LocalInputSubsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
-		// Add input mapping context
-		if (LocalInputSubsystem)
-		{
-			LocalInputSubsystem->AddMappingContext(DefaultMappingContext, 0);
-		}
-	}
-
-	SetupInputComponent();
-}
-
-void UFineMovementInputControl::Deactivate()
-{
-	const auto PlayerController = CastChecked<APlayerController>(GetOwner());
-	TearDownInputComponent();
-
-	const auto LocalPlayer = PlayerController->GetLocalPlayer();
-	if (IsValid(LocalPlayer))
-	{
-		const auto LocalInputSubsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
-		// Remove input mapping context
-		if (LocalInputSubsystem)
-		{
-			LocalInputSubsystem->RemoveMappingContext(DefaultMappingContext);
-		}
-	}
-
-	Super::Deactivate();
-}
-
 void UFineMovementInputControl::SpawnCursorEffect(const FVector& Location)
 {
 	if (IsValid(FXCursor))
 	{
 		const auto PlayerController = CastChecked<APlayerController>(GetOwner());
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(PlayerController, FXCursor, Location,
-		                                               FRotator::ZeroRotator,
-		                                               FVector(1.f, 1.f, 1.f), true, true, ENCPoolMethod::None,
-		                                               true);
+													   FRotator::ZeroRotator,
+													   FVector(1.f, 1.f, 1.f), true, true, ENCPoolMethod::None,
+													   true);
 	}
 	OnCursorEffectSpawned.Broadcast(Location);
-}
-
-bool UFineMovementInputControl::GetAbilitySystemComponent(OUT UAbilitySystemComponent*& OutComponent)
-{
-	// Get player controller. Assume the owner is the one.
-	const auto PlayerController = CastChecked<APlayerController>(GetOwner());
-	// Get pawn
-	APawn* ControlledPawn = PlayerController->GetPawn();
-	// Get ability system component from the pawn
-	UAbilitySystemComponent* AbilitySystemComponent = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(
-		ControlledPawn);
-	// If ability system component is invalid, return
-	if (!IsValid(AbilitySystemComponent))
-	{
-		OutComponent = nullptr;
-		return false;
-	}
-	OutComponent = AbilitySystemComponent;
-	return true;
 }
 
 bool UFineMovementInputControl::IsCharacterRunning()
@@ -488,27 +403,13 @@ void UFineMovementInputControl::UpdateAddMovementInput()
 		// Don't add input if the character is jumping.
 		// Get character gameplay component
 		const auto CharacterGameplay = ControlledPawn->FindComponentByClass<UFineCharacterGameplay>();
-		const auto DistanceFromGround = CharacterGameplay->GetDistanceFromGroundStaticMesh();
+		const FVector WorldDirection = (CachedDestination - ControlledPawn->GetActorLocation()).GetSafeNormal();
+		const auto ForwardOffset = WorldDirection * 5.f;
+		const auto DistanceFromGround = CharacterGameplay->GetDistanceFromGroundStaticMesh(ForwardOffset);
 		if (DistanceFromGround > 5.f)
 		{
 			return;
 		}
-		FVector WorldDirection = (CachedDestination - ControlledPawn->GetActorLocation()).GetSafeNormal();
 		ControlledPawn->AddMovementInput(WorldDirection, 1.0, false);
 	}
-}
-
-UFineCharacterGameplay* UFineMovementInputControl::GetCharacterGameplay() const
-{
-	APawn* ControlledPawn = CastChecked<APlayerController>(GetOwner())->GetPawn();
-	if (ControlledPawn == nullptr)
-	{
-		return nullptr;
-	}
-	const auto CharacterGameplay = ControlledPawn->FindComponentByClass<UFineCharacterGameplay>();
-	if (CharacterGameplay == nullptr)
-	{
-		return nullptr;
-	}
-	return CharacterGameplay;
 }

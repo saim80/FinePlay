@@ -31,6 +31,7 @@ void UFineMaterialParameterAnimation::PlayAnimation(float InStartValue, float In
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &UFineMaterialParameterAnimation::UpdateMaterialParameter,
 	                                       Interval, true);
 	OnMaterialAnimationBegin.Broadcast(StartValue, EndValue);
+	UpdateMaterialParameter();
 }
 
 void UFineMaterialParameterAnimation::StopAnimation()

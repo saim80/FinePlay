@@ -48,14 +48,14 @@ void UFineCharacterGameplay::AddAbilityByClass(UClass* InClass, int32 InLevel, i
 	FP_LOG("Gave ability: %s, %i, %i", *InClass->GetName(), InLevel, InInputID);
 }
 
-float UFineCharacterGameplay::GetDistanceFromGroundStaticMesh()
+float UFineCharacterGameplay::GetDistanceFromGroundStaticMesh(const FVector& Offset)
 {
 	// Get distance from ground static mesh.
 	static const float MaxDistance = 1000.0f;
 	const auto Owner = GetOwner();
 	const auto Capsule = Owner->FindComponentByClass<UCapsuleComponent>();
 	const auto CapsuleHalfHeight = Capsule->GetScaledCapsuleHalfHeight();
-	const auto Start = Owner->GetActorLocation();
+	const auto Start = Owner->GetActorLocation() + Offset;
 	const auto ActorDownVector = Owner->GetActorUpVector() * -1.0f;
 	const auto End = Start + ActorDownVector * MaxDistance;
 	FHitResult HitResult;
@@ -69,7 +69,7 @@ float UFineCharacterGameplay::GetDistanceFromGroundStaticMesh()
 		FP_VERBOSE("Distance from ground static mesh: %f", FinalDistance);
 		return FinalDistance;
 	}
-	FP_LOG("Distance from ground static mesh: %f (Max)", MaxDistance);
+	FP_VERBOSE("Distance from ground static mesh: %f (Max)", MaxDistance);
 	return MaxDistance;
 }
 

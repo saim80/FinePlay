@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "FineCommonInputControl.h"
 #include "InputAction.h"
 #include "Components/ActorComponent.h"
 #include "FineMovementInputControl.generated.h"
@@ -13,13 +14,12 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCursorEffectSpawned, const FVecto
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnMovementStarted);
 
-struct FInputBindingHandle;
 class UInputAction;
 class UInputMappingContext;
 class UNiagaraSystem;
 /// Provides user input handling for character movement.
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
-class FINEPLAY_API UFineMovementInputControl : public UActorComponent
+class FINEPLAY_API UFineMovementInputControl : public UFineCommonInputControl
 {
 	GENERATED_BODY()
 
@@ -34,8 +34,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	UNiagaraSystem* FXCursor;
 
-	virtual void SetupInputComponent();
-	virtual void TearDownInputComponent();
+	virtual void SetupInputComponent() override;
 	FORCEINLINE const int32& GetRunActionInputID() const { return RunActionInputID; }
 
 	UPROPERTY(BlueprintAssignable)
@@ -60,7 +59,7 @@ protected:
 	/** True if the controlled character should navigate to the mouse cursor. */
 	uint32 bMoveToMouseCursor : 1;
 
-	void OnInputStarted();
+	virtual void OnInputStarted() override;
 	void OnSetDestinationTriggered();
 	void OnSetDestinationReleased();
 	void OnTouchTriggered();
@@ -74,9 +73,6 @@ protected:
 	void OnJumpTriggered();
 	void OnJumpReleased();
 
-	virtual void Activate(bool bReset) override;
-	virtual void Deactivate() override;
-
 	virtual void SpawnCursorEffect(const FVector& Location);
 
 private:
@@ -86,10 +82,6 @@ private:
 	float FollowTime;
 	/// User's using touch interface?
 	bool bIsTouch;
-
-	/** MappingContext */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
-	UInputMappingContext* DefaultMappingContext;
 
 	/** Click Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
@@ -112,28 +104,23 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	UInputAction* JumpAction;
 
-	TArray<FInputBindingHandle> ActionBindings;
-
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	int32 RunActionInputID = INDEX_NONE;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	int32 JumpActionInputID = INDEX_NONE;
 
-	bool GetAbilitySystemComponent(UAbilitySystemComponent*& OutComponent);
-	bool IsCharacterRunning();
-	bool IsCharacterJumping();
 	FTimerHandle RunDisableTimerHandle;
-
-	void UpdateAddMovementInput();
 
 	// --------------------
 	// Movement
 	// --------------------
 	FTimerHandle MovementTimerHandle;
+	void UpdateAddMovementInput();
 
 	// --------------------
 	// Utility
 	// --------------------
-	UFineCharacterGameplay *GetCharacterGameplay() const;
+	bool IsCharacterRunning();
+	bool IsCharacterJumping();
 };
