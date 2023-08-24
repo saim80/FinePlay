@@ -34,6 +34,14 @@ public:
 	FOnAnimationStateUpdated OnAnimationLoopEnded;
 
 	FORCEINLINE const float& GetDuration() const { return Duration; }
+	FORCEINLINE void SetDuration(const float& NewDuration) { Duration = NewDuration; }
+	FORCEINLINE bool GetAutoReverseOnLoop() const { return bAutoReverseOnLoop; }
+	FORCEINLINE void SetAutoReverseOnLoop(const bool& bNewAutoReverseOnLoop)
+	{
+		bAutoReverseOnLoop = bNewAutoReverseOnLoop;
+	}
+	FORCEINLINE const int32& GetLoopCount() const { return LoopCount; }
+	FORCEINLINE void SetLoopCount(const int32& NewLoopCount) { LoopCount = NewLoopCount; }
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool IsAnimating();
