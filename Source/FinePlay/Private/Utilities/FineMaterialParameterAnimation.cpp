@@ -1,4 +1,4 @@
-#include "Actor/FineMaterialParameterAnimation.h"
+#include "Utilities/FineMaterialParameterAnimation.h"
 
 #include "FinePlayLog.h"
 #include "Materials/MaterialInstanceConstant.h"
@@ -15,10 +15,10 @@ void UFineMaterialParameterAnimation::ResetMaterialParameterValue()
 		return;
 	}
 	StopAnimation();
-	UpdateMaterialParameter();
+	MaterialInstanceDynamic->SetScalarParameterValue(ParameterName, DefaultValue);
 }
 
-void UFineMaterialParameterAnimation::PlayAnimation(float InStartValue, float InEndValue)
+void UFineMaterialParameterAnimation::PlayMaterialAnimation(float InStartValue, float InEndValue)
 {
 	if (!MaterialInstanceDynamic.IsValid())
 	{
@@ -27,32 +27,14 @@ void UFineMaterialParameterAnimation::PlayAnimation(float InStartValue, float In
 	}
 	StartValue = InStartValue;
 	EndValue = InEndValue;
-	Elapsed = 0.f;
-	GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &UFineMaterialParameterAnimation::UpdateMaterialParameter,
-	                                       Interval, true);
 	OnMaterialAnimationBegin.Broadcast(StartValue, EndValue);
 	UpdateMaterialParameter();
-}
-
-void UFineMaterialParameterAnimation::StopAnimation()
-{
-	if (!MaterialInstanceDynamic.IsValid())
-	{
-		FP_WARNING("Material instance dynamic is not valid.");
-		return;
-	}
-	GetWorld()->GetTimerManager().ClearTimer(TimerHandle);
-}
-
-bool UFineMaterialParameterAnimation::IsAnimating() const
-{
-	// Check timer handle is valid.
-	return TimerHandle.IsValid();
+	PlayAnimation();
 }
 
 void UFineMaterialParameterAnimation::RunTestAnimation()
 {
-	PlayAnimation(0, 1);
+	PlayMaterialAnimation(0, 1);
 }
 
 void UFineMaterialParameterAnimation::BeginPlay()
@@ -68,6 +50,12 @@ void UFineMaterialParameterAnimation::EndPlay(const EEndPlayReason::Type EndPlay
 	MaterialInstanceDynamic = nullptr;
 	MeshComponent = nullptr;
 	Super::EndPlay(EndPlayReason);
+}
+
+void UFineMaterialParameterAnimation::UpdateAnimation()
+{
+	Super::UpdateAnimation();
+	UpdateMaterialParameter();
 }
 
 void UFineMaterialParameterAnimation::ReplaceMaterialInstanceDynamic()
@@ -121,21 +109,12 @@ void UFineMaterialParameterAnimation::UpdateMaterialParameter()
 	{
 		return;
 	}
-	// if it's not animating, set the default value to the material parameter.
-	if (!IsAnimating())
-	{
-		MaterialInstanceDynamic->SetScalarParameterValue(ParameterName, DefaultValue);
-		return;
-	}
-	// Update elapsed time.
-	Elapsed += Interval;
 	// Get alpha value from elapsed time / duration
 	const auto Alpha = FMath::Clamp<float>(Elapsed / Duration, 0.0f, 1.0f);
 	if (FMath::IsNearlyEqual(Alpha, 1.f, UE_KINDA_SMALL_NUMBER))
 	{
 		// Animation completed. Stop animation.
 		// Continue executing to set the final value.
-		StopAnimation();
 		OnMaterialAnimationEnd.Broadcast(StartValue, EndValue);
 	}
 	// Get parameter value from linear interpolation.
