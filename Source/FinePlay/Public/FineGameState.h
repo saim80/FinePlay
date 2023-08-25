@@ -7,6 +7,7 @@
 #include "GameFramework/GameState.h"
 #include "FineGameState.generated.h"
 
+class UFineLocalDatabaseComponent;
 class UFineSceneLoop;
 
 UCLASS(Blueprintable, BlueprintType)
@@ -19,7 +20,8 @@ public:
 	AFineGameState();
 
 	FORCEINLINE UFineSceneLoop* GetSceneLoop() const { return SceneLoop; }
-	
+
+	FORCEINLINE UFineLocalDatabaseComponent *GetLocalDatabaseComponent() const { return LocalDatabaseComponent; }
 private:
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, meta = (AllowPrivateAccess = "true"))
 	TSoftClassPtr<UFineSceneLoop> SceneLoopClass;

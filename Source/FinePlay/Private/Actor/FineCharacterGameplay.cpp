@@ -37,15 +37,35 @@ bool UFineCharacterGameplay::IsInvincible()
 	return AbilitySystemComponent->HasMatchingGameplayTag(Tag);
 }
 
-void UFineCharacterGameplay::AddAbilityByClass(UClass* InClass, int32 InLevel, int32 InInputID)
+FGameplayAbilitySpecHandle UFineCharacterGameplay::AddAbilityByClass(UClass* InClass, int32 InLevel, int32 InInputID,
+                                                                     UObject* InSourceObject)
 {
 	// Add ability to ability system.
 	const auto AbilitySystem = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(GetOwner());
 	const TSubclassOf<UGameplayAbility> AbilityClass = InClass;
-	const auto Handle = AbilitySystem->GiveAbility(FGameplayAbilitySpec(AbilityClass, InLevel, InInputID, this));
+	const auto Handle = AbilitySystem->GiveAbility(
+		FGameplayAbilitySpec(AbilityClass, InLevel, InInputID, IsValid(InSourceObject) ? InSourceObject : this));
 	AbilityHandles.Add(Handle);
 
 	FP_LOG("Gave ability: %s, %i, %i", *InClass->GetName(), InLevel, InInputID);
+	return Handle;
+}
+
+void UFineCharacterGameplay::RemoveAbilityByClass(UClass* InClass)
+{
+	const auto AbilitySystem = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(GetOwner());
+	const TSubclassOf<UGameplayAbility> AbilityClass = InClass;
+	for (const auto AbilityHandle : AbilityHandles)
+	{
+		const auto AbilitySpec = AbilitySystem->FindAbilitySpecFromHandle(AbilityHandle);
+		if (AbilitySpec->Ability->IsA(AbilityClass))
+		{
+			AbilitySystem->ClearAbility(AbilityHandle);
+			AbilityHandles.Remove(AbilityHandle);
+			FP_LOG("Removed ability: %s", *InClass->GetName());
+			return;
+		}
+	}
 }
 
 float UFineCharacterGameplay::GetDistanceFromGroundStaticMesh(const FVector& Offset)
@@ -385,7 +405,7 @@ UFineCharacterAttributeSet* UFineCharacterGameplay::GetAttributeSet() const
 	{
 		return nullptr;
 	}
-		
+
 	auto AttributeSet = const_cast<UAttributeSet*>(AbilitySystemComponent->GetAttributeSet(AttributeSetClass));
 	return Cast<UFineCharacterAttributeSet>(AttributeSet);
 }

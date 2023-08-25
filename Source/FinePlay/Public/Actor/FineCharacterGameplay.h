@@ -33,7 +33,10 @@ public:
 	bool IsInvincible();
 
 	UFUNCTION(BlueprintCallable, CallInEditor, Category = "FineCharacterGameplay")
-	void AddAbilityByClass(UClass* InClass, int32 InLevel, int32 InInputID);
+	FGameplayAbilitySpecHandle AddAbilityByClass(UClass* InClass, int32 InLevel, int32 InInputID,
+	                                             UObject* InSourceObject = nullptr);
+	UFUNCTION(BlueprintCallable, CallInEditor, Category = "FineCharacterGameplay")
+	void RemoveAbilityByClass(UClass* InClass);
 
 	UPROPERTY(BlueprintAssignable)
 	FOnCharacterDamageTaken OnCharacterDamageTaken;
