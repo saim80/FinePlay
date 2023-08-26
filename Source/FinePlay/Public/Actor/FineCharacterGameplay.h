@@ -47,6 +47,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "FineCharacterGameplay")
 	FVector GetFeetLocation() const;
 
+	UFUNCTION(BlueprintCallable, Category = "FineCharacterGameplay")
+	FVector GetHeadLocation() const;
+
 	UFUNCTION(BlueprintCallable, Category= "FineCharacterGameplay")
 	void AddLooseGameplayTagForAbilitySystem(const FGameplayTag& Tag);
 	UFUNCTION(BlueprintCallable, Category= "FineCharacterGameplay")
