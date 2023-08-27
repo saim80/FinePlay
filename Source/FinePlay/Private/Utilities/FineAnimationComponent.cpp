@@ -20,6 +20,10 @@ void UFineAnimationComponent::PlayAnimation()
 
 void UFineAnimationComponent::StopAnimation()
 {
+	if (!IsAnimating())
+	{
+		return;
+	}
 	OnAnimationFinished.Broadcast();
 	GetWorld()->GetTimerManager().ClearTimer(AnimTimerHandle);
 }
