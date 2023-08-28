@@ -15,7 +15,20 @@ void UFineMaterialParameterAnimation::ResetMaterialParameterValue()
 		return;
 	}
 	StopAnimation();
-	MaterialInstanceDynamic->SetScalarParameterValue(ParameterName, DefaultValue);
+	// for each default scalar value, set it to material instance dynamic.
+	for (const auto& Pair : DefaultScalarValues)
+	{
+		const auto _ParameterName = Pair.Key;
+		const auto DefaultValue = Pair.Value;
+		MaterialInstanceDynamic->SetScalarParameterValue(_ParameterName, DefaultValue);
+	}
+	// for each default vector value, set it to material instance dynamic.
+	for (const auto& Pair : DefaultVectorValues)
+	{
+		const auto _ParameterName = Pair.Key;
+		const auto DefaultValue = Pair.Value;
+		MaterialInstanceDynamic->SetVectorParameterValue(_ParameterName, DefaultValue);
+	}
 }
 
 void UFineMaterialParameterAnimation::PlayMaterialAnimation(float InStartValue, float InEndValue)
@@ -91,6 +104,7 @@ void UFineMaterialParameterAnimation::ReplaceMaterialInstanceDynamic()
 	MaterialInstanceDynamic = MeshComponent->CreateDynamicMaterialInstance(
 		GetMaterialSlotIndex(), MaterialInstanceConstant);
 	check(MaterialInstanceDynamic.IsValid());
+	ResetMaterialParameterValue();
 }
 
 void UFineMaterialParameterAnimation::RestoreMaterialInterface() const

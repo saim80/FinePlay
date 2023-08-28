@@ -4,6 +4,7 @@
 #include "FineMaterialParameterAnimation.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnMaterialAnimationBegin, float, StartValue, float, EndValue);
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnMaterialAnimationEnd, float, StartValue, float, EndValue);
 
 UCLASS(Blueprintable, BlueprintType, ClassGroup = (FinePlay), meta = (BlueprintSpawnableComponent))
@@ -30,6 +31,17 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnMaterialAnimationEnd OnMaterialAnimationEnd;
 
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE void SetDefaultScalarValues(const TMap<FName, float>& InDefaultScalarValues)
+	{
+		DefaultScalarValues = InDefaultScalarValues;
+	}
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE void SetDefaultVectorValues(const TMap<FName, FLinearColor>& InDefaultVectorValues)
+	{
+		DefaultVectorValues = InDefaultVectorValues;
+	}
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -47,7 +59,10 @@ private:
 	float EndValue = 1.f;
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "FineMaterialParameterAnimation",
 		meta = (AllowPrivateAccess = true))
-	float DefaultValue = 0.f;
+	TMap<FName, float> DefaultScalarValues;
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "FineMaterialParameterAnimation",
+		meta = (AllowPrivateAccess = true))
+	TMap<FName, FLinearColor> DefaultVectorValues;
 
 	UPROPERTY(Transient, meta = (AllowPrivateAccess = true))
 	TWeakObjectPtr<UMaterialInstanceDynamic> MaterialInstanceDynamic;
