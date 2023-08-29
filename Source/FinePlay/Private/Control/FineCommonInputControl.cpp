@@ -64,6 +64,7 @@ void UFineCommonInputControl::TearDownInputComponent()
 		{
 			EnhancedInputComponent->RemoveBinding(ActionBinding);
 		}
+		ActionBindings.Empty();
 	}
 }
 
