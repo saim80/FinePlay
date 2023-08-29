@@ -31,21 +31,21 @@ void UFineBaseAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
                                        const FGameplayAbilityActivationInfo ActivationInfo,
                                        const FGameplayEventData* TriggerEventData)
 {
-	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
-
 	if (!HasAuthorityOrPredictionKey(ActorInfo, &ActivationInfo))
 	{
 		return;
 	}
-	if (!CommitAbility(Handle, ActorInfo, ActivationInfo))
+	if (!CommitCheck(Handle, ActorInfo, ActivationInfo))
 	{
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
 	}
+	CommitAbility(Handle, ActorInfo, ActivationInfo);
 	const auto EffectClasses = GetEffectClasses();
 	if (EffectClasses.IsEmpty())
 	{
 		FP_ERROR("EffectClass is null.");
+		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
 	}
 	for (const auto& EffectClass : EffectClasses)
@@ -53,13 +53,14 @@ void UFineBaseAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 		if (!EffectClass)
 		{
 			FP_ERROR("EffectClass is null.");
+			EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 			return;
 		}
 
 		const auto NewSpec = MakeOutgoingGameplayEffectSpec(EffectClass, GetAbilityLevel(Handle, ActorInfo));
 		EffectHandles.Add(ApplyGameplayEffectSpecToOwner(Handle, ActorInfo, ActivationInfo,
-		                                               MakeOutgoingGameplayEffectSpec(
-			                                               EffectClass, GetAbilityLevel(Handle, ActorInfo))));
+		                                                 MakeOutgoingGameplayEffectSpec(
+			                                                 EffectClass, GetAbilityLevel(Handle, ActorInfo))));
 		FP_LOG("Apply %s effect to owner", *EffectClass->GetDisplayNameText().ToString());
 	}
 }
@@ -89,12 +90,6 @@ void UFineBaseAbility::CancelAbility(const FGameplayAbilitySpecHandle Handle,
 	}
 
 	Super::CancelAbility(Handle, ActorInfo, ActivationInfo, bReplicateCancelAbility);
-
-	for (const auto EffectHandle : EffectHandles)
-	{
-		BP_RemoveGameplayEffectFromOwnerWithHandle(EffectHandle);
-	}
-
 	FP_LOG("%s effect removed.", *GetClass()->GetDisplayNameText().ToString());
 }
 
@@ -108,6 +103,7 @@ void UFineBaseAbility::EndAbility(const FGameplayAbilitySpecHandle Handle,
 	{
 		BP_RemoveGameplayEffectFromOwnerWithHandle(EffectHandle);
 	}
+	EffectHandles.Empty();
 }
 
 TArray<TSubclassOf<UGameplayEffect>> UFineBaseAbility::GetEffectClasses()
