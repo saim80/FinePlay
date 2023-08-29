@@ -7,7 +7,7 @@ UFineAnimationComponent::UFineAnimationComponent(): Super()
 {
 }
 
-void UFineAnimationComponent::PlayAnimation()
+void UFineAnimationComponent::PlayAnimation_Implementation()
 {
 	Elapsed = 0;
 	bReversed = false;
@@ -18,7 +18,7 @@ void UFineAnimationComponent::PlayAnimation()
 	                                       true);
 }
 
-void UFineAnimationComponent::StopAnimation()
+void UFineAnimationComponent::StopAnimation_Implementation()
 {
 	if (!IsAnimating())
 	{

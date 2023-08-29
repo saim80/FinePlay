@@ -45,6 +45,29 @@ void UFineMaterialParameterAnimation::PlayMaterialAnimation(float InStartValue, 
 	PlayAnimation();
 }
 
+void UFineMaterialParameterAnimation::PlayMaterialMultiParameterAnimation(const TMap<FName, float>& SourceScalars,
+                                                                          const TMap<FName, FLinearColor>&
+                                                                          SourceVectors,
+                                                                          const TMap<FName, float>& TargetScalars,
+                                                                          const TMap<FName, FLinearColor>&
+                                                                          TargetVectors)
+{
+	if (!MaterialInstanceDynamic.IsValid())
+	{
+		FP_WARNING("Material instance dynamic is not valid.");
+		return;
+	}
+	SourceScalarValues = SourceScalars;
+	SourceVectorValues = SourceVectors;
+	TargetScalarValues = TargetScalars;
+	TargetVectorValues = TargetVectors;
+	StartValue = 0;
+	EndValue = 1;
+	OnMaterialAnimationBegin.Broadcast(StartValue, EndValue);
+	UpdateMaterialParameter();
+	PlayAnimation();
+}
+
 void UFineMaterialParameterAnimation::RunTestAnimation()
 {
 	PlayMaterialAnimation(0, 1);
@@ -69,6 +92,15 @@ void UFineMaterialParameterAnimation::UpdateAnimation()
 {
 	Super::UpdateAnimation();
 	UpdateMaterialParameter();
+}
+
+void UFineMaterialParameterAnimation::StopAnimation_Implementation()
+{
+	Super::StopAnimation_Implementation();
+	SourceScalarValues.Empty();
+	SourceVectorValues.Empty();
+	TargetScalarValues.Empty();
+	TargetVectorValues.Empty();
 }
 
 void UFineMaterialParameterAnimation::ReplaceMaterialInstanceDynamic()
@@ -131,10 +163,39 @@ void UFineMaterialParameterAnimation::UpdateMaterialParameter()
 		// Continue executing to set the final value.
 		OnMaterialAnimationEnd.Broadcast(StartValue, EndValue);
 	}
-	// Get parameter value from linear interpolation.
-	const auto ParameterValue = FMath::Lerp<float>(StartValue, EndValue, Alpha);
-	// Set parameter value to material instance dynamic.
-	MaterialInstanceDynamic->SetScalarParameterValue(ParameterName, ParameterValue);
+	if (SourceScalarValues.IsEmpty() && SourceVectorValues.IsEmpty())
+	{
+		// Get parameter value from linear interpolation.
+		const auto ParameterValue = FMath::Lerp<float>(StartValue, EndValue, Alpha);
+		// Set parameter value to material instance dynamic.
+		MaterialInstanceDynamic->SetScalarParameterValue(ParameterName, ParameterValue);
+	}
+	else
+	{
+		check(SourceScalarValues.Num() == TargetScalarValues.Num());
+		check(SourceVectorValues.Num() == TargetVectorValues.Num());
+
+		// for each scalar value, get source and target value from map.
+		// lerp to get the current value and set it to material instance dynamic.
+		for (const auto& Pair : SourceScalarValues)
+		{
+			const auto _ParameterName = Pair.Key;
+			const auto SourceValue = Pair.Value;
+			const auto TargetValue = TargetScalarValues[_ParameterName];
+			const auto ParameterValue = FMath::Lerp<float>(SourceValue, TargetValue, Alpha);
+			MaterialInstanceDynamic->SetScalarParameterValue(_ParameterName, ParameterValue);
+		}
+		// for each linear color value, get source and target value from map.
+		// lerp to get the current value and set it to material instance dynamic.
+		for (const auto& Pair : SourceVectorValues)
+		{
+			const auto _ParameterName = Pair.Key;
+			const auto SourceValue = Pair.Value;
+			const auto TargetValue = TargetVectorValues[_ParameterName];
+			const auto ParameterValue = FMath::Lerp<FLinearColor>(SourceValue, TargetValue, Alpha);
+			MaterialInstanceDynamic->SetVectorParameterValue(_ParameterName, ParameterValue);
+		}
+	}
 }
 
 void UFineMaterialParameterAnimation::UpdateMeshComponent()

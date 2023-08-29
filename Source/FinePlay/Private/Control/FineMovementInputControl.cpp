@@ -172,6 +172,10 @@ void UFineMovementInputControl::OnInputStarted()
 
 void UFineMovementInputControl::OnSetDestinationTriggered()
 {
+	if (!IsActive())
+	{
+		return;
+	}
 	const auto PlayerController = CastChecked<APlayerController>(GetOwner());
 
 	// We flag that the input is being pressed
@@ -201,6 +205,10 @@ void UFineMovementInputControl::OnSetDestinationTriggered()
 
 void UFineMovementInputControl::OnSetDestinationReleased()
 {
+	if (!IsActive())
+	{
+		return;
+	}
 	// If it was a short press
 	if (FollowTime <= ShortPressThreshold)
 	{
@@ -215,18 +223,30 @@ void UFineMovementInputControl::OnSetDestinationReleased()
 
 void UFineMovementInputControl::OnTouchTriggered()
 {
+	if (!IsActive())
+	{
+		return;
+	}
 	bIsTouch = true;
 	OnSetDestinationTriggered();
 }
 
 void UFineMovementInputControl::OnTouchReleased()
 {
+	if (!IsActive())
+	{
+		return;
+	}
 	bIsTouch = false;
 	OnSetDestinationReleased();
 }
 
 void UFineMovementInputControl::OnWalkTriggered(const FInputActionInstance& InputActionInstance)
 {
+	if (!IsActive())
+	{
+		return;
+	}
 	// Get input value
 	const FVector2D InputValue = InputActionInstance.GetValue().Get<FVector2D>();
 
@@ -244,11 +264,14 @@ void UFineMovementInputControl::OnWalkTriggered(const FInputActionInstance& Inpu
 
 void UFineMovementInputControl::OnWalkReleased(const FInputActionInstance& InputActionInstance)
 {
-	CachedDestination = FVector::ZeroVector;
 }
 
 void UFineMovementInputControl::OnRunKeyTriggered()
 {
+	if (!IsActive())
+	{
+		return;
+	}
 	// clear run disable timer.
 	GetWorld()->GetTimerManager().ClearTimer(RunDisableTimerHandle);
 
@@ -265,6 +288,10 @@ void UFineMovementInputControl::OnRunKeyTriggered()
 
 void UFineMovementInputControl::OnRunKeyReleased()
 {
+	if (!IsActive())
+	{
+		return;
+	}
 	if (IsCharacterRunning())
 	{
 		UAbilitySystemComponent* AbilitySystemComponent;
@@ -278,11 +305,19 @@ void UFineMovementInputControl::OnRunKeyReleased()
 
 void UFineMovementInputControl::OnRunTouchTriggered()
 {
+	if (!IsActive())
+	{
+		return;
+	}
 	OnRunKeyTriggered();
 }
 
 void UFineMovementInputControl::OnRunTouchReleased()
 {
+	if (!IsActive())
+	{
+		return;
+	}
 	// if it was a short press
 	if (FollowTime <= ShortPressThreshold)
 	{
@@ -327,6 +362,10 @@ void UFineMovementInputControl::OnRunTouchReleased()
 
 void UFineMovementInputControl::OnJumpTriggered()
 {
+	if (!IsActive())
+	{
+		return;
+	}
 	if (!IsCharacterJumping())
 	{
 		UAbilitySystemComponent* AbilitySystemComponent;
@@ -341,6 +380,10 @@ void UFineMovementInputControl::OnJumpTriggered()
 
 void UFineMovementInputControl::OnJumpReleased()
 {
+	if (!IsActive())
+	{
+		return;
+	}
 	if (IsCharacterJumping())
 	{
 		UAbilitySystemComponent* AbilitySystemComponent;
@@ -349,11 +392,16 @@ void UFineMovementInputControl::OnJumpReleased()
 			return;
 		}
 		AbilitySystemComponent->ReleaseInputID(JumpActionInputID);
+		FP_LOG("Jump released.");
 	}
 }
 
 void UFineMovementInputControl::SpawnCursorEffect(const FVector& Location)
 {
+	if (!IsActive())
+	{
+		return;
+	}
 	if (IsValid(FXCursor))
 	{
 		const auto PlayerController = CastChecked<APlayerController>(GetOwner());
@@ -391,6 +439,10 @@ bool UFineMovementInputControl::IsCharacterJumping()
 
 void UFineMovementInputControl::UpdateAddMovementInput()
 {
+	if (!IsActive())
+	{
+		return;
+	}
 	// Move towards mouse pointer or touch
 	if (IsCharacterJumping())
 	{

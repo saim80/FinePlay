@@ -26,7 +26,7 @@ public:
 	static bool IsStreamingNeeded(const UObject* WorldContextObject);
 
 	UFUNCTION(BlueprintCallable, Category = "FinePlay")
-	static void SetUserInputEnabled(AActor* Actor, const bool bEnabled);
+	static void SetUserInputEnabled(AActor* Actor, const bool bEnabled, const FString Context = TEXT(""));
 
 	UFUNCTION(BlueprintCallable, Category = "FinePlay")
 	static bool GetUserInputEnabled(AActor* Actor);

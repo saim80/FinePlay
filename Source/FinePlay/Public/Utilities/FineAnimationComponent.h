@@ -19,9 +19,9 @@ class FINEPLAY_API UFineAnimationComponent : public UActorComponent
 public:
 	UFineAnimationComponent();
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void PlayAnimation();
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void StopAnimation();
 
 	UPROPERTY(BlueprintAssignable)

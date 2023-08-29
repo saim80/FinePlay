@@ -4,6 +4,7 @@
 #include "Utilities/FinePlayFunctionLibrary.h"
 
 #include "FineCountedFlag.h"
+#include "FinePlayLog.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/GameStateBase.h"
 #include "Kismet/GameplayStatics.h"
@@ -55,7 +56,7 @@ bool UFinePlayFunctionLibrary::IsStreamingNeeded(const UObject* WorldContextObje
 	return PlayerController->IsStreamingSourceEnabled() && IsStreamingCompleted(WorldContextObject) == false;
 }
 
-void UFinePlayFunctionLibrary::SetUserInputEnabled(AActor* Actor, const bool bEnabled)
+void UFinePlayFunctionLibrary::SetUserInputEnabled(AActor* Actor, const bool bEnabled, const FString Context)
 {
 	const auto Character = Cast<ACharacter>(Actor);
 	if (IsValid(Character))
@@ -65,6 +66,8 @@ void UFinePlayFunctionLibrary::SetUserInputEnabled(AActor* Actor, const bool bEn
 		{
 			const auto Flag = Controller->FindComponentByClass<UFineCountedFlag>();
 			Flag->SetEnabled(bEnabled);
+			FP_LOG("Flag change attempted: %s, actual value %s: %s", bEnabled ? TEXT("enabled") : TEXT("disabled"),
+			       Flag->IsEnabled() ? TEXT("enabled") : TEXT("disabled"), *Context);
 		}
 	}
 }

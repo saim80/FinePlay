@@ -53,6 +53,8 @@ public:
 		JumpActionInputID = InJumpActionID;
 	}
 
+	FORCEINLINE const FVector& GetCachedDestination() const { return CachedDestination; }
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
