@@ -82,16 +82,6 @@ void UFineMovementInputControl::SetupInputComponent()
 		ActionBindings.Add(EnhancedInputComponent->BindAction(RunKeyAction, ETriggerEvent::Canceled, this,
 		                                                      &UFineMovementInputControl::OnRunKeyReleased));
 
-		// Setup run touch input events.
-		ActionBindings.Add(EnhancedInputComponent->BindAction(RunTouchAction, ETriggerEvent::Started, this,
-		                                                      &UFineMovementInputControl::OnInputStarted));
-		ActionBindings.Add(EnhancedInputComponent->BindAction(RunTouchAction, ETriggerEvent::Triggered, this,
-		                                                      &UFineMovementInputControl::OnRunTouchTriggered));
-		ActionBindings.Add(EnhancedInputComponent->BindAction(RunTouchAction, ETriggerEvent::Completed, this,
-		                                                      &UFineMovementInputControl::OnRunTouchReleased));
-		ActionBindings.Add(EnhancedInputComponent->BindAction(RunTouchAction, ETriggerEvent::Canceled, this,
-		                                                      &UFineMovementInputControl::OnRunTouchReleased));
-
 		// Set up jump input events.
 		ActionBindings.Add(EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this,
 		                                                      &UFineMovementInputControl::OnInputStarted));
@@ -102,6 +92,40 @@ void UFineMovementInputControl::SetupInputComponent()
 		ActionBindings.Add(EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Canceled, this,
 		                                                      &UFineMovementInputControl::OnJumpReleased));
 	}
+}
+
+void UFineMovementInputControl::BindCharacterInputEvents()
+{
+	// Get ability system.
+	UAbilitySystemComponent* AbilitySystem;
+	if (!GetAbilitySystemComponent(AbilitySystem))
+	{
+		return;
+	}
+	// Bind to running tag change.
+	AbilitySystem->RegisterGameplayTagEvent(FGameplayTag::RequestGameplayTag(TEXT("Actor.State.Running")),
+	                                        EGameplayTagEventType::NewOrRemoved).AddUObject(this,
+		&UFineMovementInputControl::OnAbilitySystemTagChanged);
+	// bind to jumping tag change.
+	AbilitySystem->RegisterGameplayTagEvent(FGameplayTag::RequestGameplayTag(TEXT("Actor.State.Jumping")),
+	                                        EGameplayTagEventType::NewOrRemoved).AddUObject(this,
+		&UFineMovementInputControl::OnAbilitySystemTagChanged);
+}
+
+void UFineMovementInputControl::UnbindCharacterInputEvents()
+{
+	// Get ability system.
+	UAbilitySystemComponent* AbilitySystem;
+	if (!GetAbilitySystemComponent(AbilitySystem))
+	{
+		return;
+	}
+	// Unbind to running tag change.
+	AbilitySystem->RegisterGameplayTagEvent(FGameplayTag::RequestGameplayTag(TEXT("Actor.State.Running")),
+	                                        EGameplayTagEventType::NewOrRemoved).RemoveAll(this);
+	// Unbind to jumping tag change.
+	AbilitySystem->RegisterGameplayTagEvent(FGameplayTag::RequestGameplayTag(TEXT("Actor.State.Jumping")),
+	                                        EGameplayTagEventType::NewOrRemoved).RemoveAll(this);
 }
 
 void UFineMovementInputControl::BeginPlay()
@@ -292,72 +316,12 @@ void UFineMovementInputControl::OnRunKeyReleased()
 	{
 		return;
 	}
-	if (IsCharacterRunning())
-	{
-		UAbilitySystemComponent* AbilitySystemComponent;
-		if (!GetAbilitySystemComponent(AbilitySystemComponent))
-		{
-			return;
-		}
-		AbilitySystemComponent->ReleaseInputID(RunActionInputID);
-	}
-}
-
-void UFineMovementInputControl::OnRunTouchTriggered()
-{
-	if (!IsActive())
+	UAbilitySystemComponent* AbilitySystemComponent;
+	if (!GetAbilitySystemComponent(AbilitySystemComponent))
 	{
 		return;
 	}
-	OnRunKeyTriggered();
-}
-
-void UFineMovementInputControl::OnRunTouchReleased()
-{
-	if (!IsActive())
-	{
-		return;
-	}
-	// if it was a short press
-	if (FollowTime <= ShortPressThreshold)
-	{
-		// create weak this
-		TWeakObjectPtr<UFineMovementInputControl> WeakThis(this);
-		// Start run disable timer.
-		GetWorld()->GetTimerManager().SetTimer(RunDisableTimerHandle, [=]()
-		{
-			// if weak this is still valid
-			if (!WeakThis.IsValid())
-			{
-				return;
-			}
-			const auto This = WeakThis.Get();
-			// Check if player is still running
-			if (!This->IsCharacterRunning())
-			{
-				// clear timer
-				This->GetWorld()->GetTimerManager().ClearTimer(This->RunDisableTimerHandle);
-				return;
-			}
-			// track the destination distance periodically and quit running if it's too close
-			const auto PlayerController = CastChecked<APlayerController>(This->GetOwner());
-			const APawn* ControlledPawn = PlayerController->GetPawn();
-			if (ControlledPawn != nullptr)
-			{
-				const float Distance = FVector::Dist(ControlledPawn->GetActorLocation(), This->CachedDestination);
-				if (Distance <= 5.0f)
-				{
-					This->OnRunKeyReleased();
-					// Clear timer
-					This->GetWorld()->GetTimerManager().ClearTimer(This->RunDisableTimerHandle);
-				}
-			}
-		}, 0.1f, true);
-	}
-	else
-	{
-		OnRunKeyReleased();
-	}
+	AbilitySystemComponent->ReleaseInputID(RunActionInputID);
 }
 
 void UFineMovementInputControl::OnJumpTriggered()
@@ -366,16 +330,13 @@ void UFineMovementInputControl::OnJumpTriggered()
 	{
 		return;
 	}
-	if (!IsCharacterJumping())
+	UAbilitySystemComponent* AbilitySystemComponent;
+	if (!GetAbilitySystemComponent(AbilitySystemComponent))
 	{
-		UAbilitySystemComponent* AbilitySystemComponent;
-		if (!GetAbilitySystemComponent(AbilitySystemComponent))
-		{
-			return;
-		}
-		AbilitySystemComponent->PressInputID(JumpActionInputID);
-		FP_LOG("Jump Triggered");
+		return;
 	}
+	AbilitySystemComponent->PressInputID(JumpActionInputID);
+	FP_LOG("Jump Triggered");
 }
 
 void UFineMovementInputControl::OnJumpReleased()
@@ -384,16 +345,13 @@ void UFineMovementInputControl::OnJumpReleased()
 	{
 		return;
 	}
-	if (IsCharacterJumping())
+	UAbilitySystemComponent* AbilitySystemComponent;
+	if (!GetAbilitySystemComponent(AbilitySystemComponent))
 	{
-		UAbilitySystemComponent* AbilitySystemComponent;
-		if (!GetAbilitySystemComponent(AbilitySystemComponent))
-		{
-			return;
-		}
-		AbilitySystemComponent->ReleaseInputID(JumpActionInputID);
-		FP_LOG("Jump released.");
+		return;
 	}
+	AbilitySystemComponent->ReleaseInputID(JumpActionInputID);
+	FP_LOG("Jump released.");
 }
 
 void UFineMovementInputControl::SpawnCursorEffect(const FVector& Location)
@@ -406,11 +364,51 @@ void UFineMovementInputControl::SpawnCursorEffect(const FVector& Location)
 	{
 		const auto PlayerController = CastChecked<APlayerController>(GetOwner());
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(PlayerController, FXCursor, Location,
-													   FRotator::ZeroRotator,
-													   FVector(1.f, 1.f, 1.f), true, true, ENCPoolMethod::None,
-													   true);
+		                                               FRotator::ZeroRotator,
+		                                               FVector(1.f, 1.f, 1.f), true, true, ENCPoolMethod::None,
+		                                               true);
 	}
 	OnCursorEffectSpawned.Broadcast(Location);
+}
+
+void UFineMovementInputControl::OnAbilitySystemTagChanged(FGameplayTag Tag, int32 NewCount)
+{
+	const auto RunningTag = FGameplayTag::RequestGameplayTag(TEXT("Actor.State.Running"));
+	const auto JumpingTag = FGameplayTag::RequestGameplayTag(TEXT("Actor.State.Jumping"));
+	int32 TargetInputID = -1;
+	if (Tag == RunningTag)
+	{
+		TargetInputID = RunActionInputID;
+	}
+	else if (Tag == JumpingTag)
+	{
+		TargetInputID = JumpActionInputID;
+	}
+	if (TargetInputID >= 0)
+	{
+		if (NewCount > 0)
+		{
+			// Get ability system.
+			UAbilitySystemComponent* AbilitySystem;
+			if (!GetAbilitySystemComponent(AbilitySystem))
+			{
+				return;
+			}
+			// Block run action input id.
+			AbilitySystem->BlockAbilityByInputID(TargetInputID);
+		}
+		else
+		{
+			// Get ability system.
+			UAbilitySystemComponent* AbilitySystem;
+			if (!GetAbilitySystemComponent(AbilitySystem))
+			{
+				return;
+			}
+			// Unblock run action input id.
+			AbilitySystem->UnBlockAbilityByInputID(TargetInputID);
+		}
+	}
 }
 
 bool UFineMovementInputControl::IsCharacterRunning()

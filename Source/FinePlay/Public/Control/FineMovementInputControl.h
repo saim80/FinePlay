@@ -8,6 +8,7 @@
 #include "Components/ActorComponent.h"
 #include "FineMovementInputControl.generated.h"
 
+struct FGameplayTag;
 class UFineCharacterGameplay;
 class UAbilitySystemComponent;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCursorEffectSpawned, const FVector&, Location);
@@ -55,6 +56,8 @@ public:
 
 	FORCEINLINE const FVector& GetCachedDestination() const { return CachedDestination; }
 
+	virtual void BindCharacterInputEvents();
+	virtual void UnbindCharacterInputEvents();
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -70,13 +73,13 @@ protected:
 	void OnWalkReleased(const FInputActionInstance& InputActionInstance);
 	void OnRunKeyTriggered();
 	void OnRunKeyReleased();
-	void OnRunTouchTriggered();
-	void OnRunTouchReleased();
 	void OnJumpTriggered();
 	void OnJumpReleased();
 
 	virtual void SpawnCursorEffect(const FVector& Location);
 
+	UFUNCTION()
+	virtual void OnAbilitySystemTagChanged(FGameplayTag Tag, int32 NewCount);
 private:
 	/// Used to remember the destination of the last movement input.
 	FVector CachedDestination;
@@ -99,9 +102,6 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	UInputAction* RunKeyAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
-	UInputAction* RunTouchAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	UInputAction* JumpAction;

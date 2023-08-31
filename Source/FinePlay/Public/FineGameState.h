@@ -21,7 +21,8 @@ public:
 
 	FORCEINLINE UFineSceneLoop* GetSceneLoop() const { return SceneLoop; }
 
-	FORCEINLINE UFineLocalDatabaseComponent *GetLocalDatabaseComponent() const { return LocalDatabaseComponent; }
+	FORCEINLINE UFineLocalDatabaseComponent* GetLocalDatabaseComponent() const { return LocalDatabaseComponent; }
+
 private:
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, meta = (AllowPrivateAccess = "true"))
 	TSoftClassPtr<UFineSceneLoop> SceneLoopClass;
@@ -29,6 +30,9 @@ private:
 	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UFineSceneLoop> SceneLoop;
 
+	/// Local data base to pull the game wide data from. This is read only database.
+	/// Using local database is only useful for single player games.
+	/// For multiplayer games, use a server database or replication.
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UFineLocalDatabaseComponent> LocalDatabaseComponent;
 };
