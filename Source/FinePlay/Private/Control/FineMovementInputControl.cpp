@@ -221,6 +221,10 @@ void UFineMovementInputControl::OnSetDestinationTriggered()
 	// If we hit a surface, cache the location
 	if (bHitSuccessful)
 	{
+		if (bIsTouch && TouchStart == FVector::ZeroVector)
+		{
+			TouchStart = Hit.Location;
+		}
 		CachedDestination = Hit.Location;
 	}
 
@@ -243,6 +247,7 @@ void UFineMovementInputControl::OnSetDestinationReleased()
 	}
 
 	FollowTime = 0.f;
+	TouchStart = FVector::ZeroVector;
 }
 
 void UFineMovementInputControl::OnTouchTriggered()
@@ -448,15 +453,29 @@ void UFineMovementInputControl::UpdateAddMovementInput()
 	}
 	const auto PlayerController = CastChecked<APlayerController>(GetOwner());
 	APawn* ControlledPawn = PlayerController->GetPawn();
+	FVector Destination;
+	if (bIsTouch)
+	{
+		Destination = CachedDestination - TouchStart + ControlledPawn->GetActorLocation();
+	}
+	else
+	{
+		Destination = CachedDestination;
+	}
 	if (ControlledPawn != nullptr)
 	{
 		// Don't add input if the character is jumping.
 		// Get character gameplay component
 		const auto CharacterGameplay = ControlledPawn->FindComponentByClass<UFineCharacterGameplay>();
-		const FVector WorldDirection = (CachedDestination - ControlledPawn->GetActorLocation()).GetSafeNormal();
-		const auto ForwardOffset = WorldDirection * 5.f;
+		const FVector WorldDirection = Destination - ControlledPawn->GetActorLocation();
+		if (WorldDirection.IsNearlyZero())
+		{
+			return;
+		}
+		constexpr float OffsetDistance = 5.f;
+		const auto ForwardOffset = WorldDirection.GetSafeNormal() * OffsetDistance;
 		const auto DistanceFromGround = CharacterGameplay->GetDistanceFromGroundStaticMesh(ForwardOffset);
-		if (DistanceFromGround > 5.f)
+		if (DistanceFromGround > OffsetDistance)
 		{
 			return;
 		}

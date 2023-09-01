@@ -87,7 +87,8 @@ private:
 	float FollowTime;
 	/// User's using touch interface?
 	bool bIsTouch;
-
+	FVector TouchStart = FVector::ZeroVector;
+	
 	/** Click Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	UInputAction* SetDestinationClickAction;
