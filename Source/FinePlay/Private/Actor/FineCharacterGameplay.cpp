@@ -251,10 +251,12 @@ void UFineCharacterGameplay::GiveDefaultAbilities()
 		{
 			for (const auto& Record : Records)
 			{
-				const auto AbilityClassPath = Record.StringFields[TEXT("AbilityClass")];
-				const auto AbilityLevel = Record.IntFields[TEXT("Level")];
-				const auto InputID = Record.IntFields[TEXT("InputID")];
-
+				const auto AbilityName = Record.StringFields.FindChecked(TEXT("AbilityName"));
+				const auto AbilityRecord = Database->GetRecordByName(TEXT("AbilityData"), *AbilityName, bSuccess);
+				if (!bSuccess) continue;
+				const auto AbilityClassPath = AbilityRecord.StringFields[TEXT("AbilityClass")];
+				const auto AbilityLevel = AbilityRecord.IntFields[TEXT("Level")];
+				const auto InputID = AbilityRecord.IntFields[TEXT("InputID")];
 				// Turn AbilityClassPath into TSubclass<UGameplayAbility>.
 				const FSoftClassPath SoftClassPath(AbilityClassPath);
 				const auto AbilityClass = SoftClassPath.TryLoadClass<UGameplayAbility>();
