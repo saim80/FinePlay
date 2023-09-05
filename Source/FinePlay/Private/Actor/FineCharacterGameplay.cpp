@@ -68,7 +68,7 @@ void UFineCharacterGameplay::RemoveAbilityByClass(UClass* InClass)
 	}
 }
 
-float UFineCharacterGameplay::GetDistanceFromGroundStaticMesh(const FVector& Offset)
+float UFineCharacterGameplay::GetDistanceFromGroundStaticMesh(const FVector Offset)
 {
 	// Get distance from ground static mesh.
 	static const float MaxDistance = 1000.0f;
@@ -149,11 +149,11 @@ void UFineCharacterGameplay::BeginPlay()
 
 	// Get ability system by finding the component from the owner.
 	const auto Owner = GetOwner();
-	AbilitySystemComponent = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Owner);
-
-	check(AbilitySystemComponent.IsValid());
+	auto AbilitySystem = SetAndGetAbilitySystemComponent();
+	
+	check(IsValid(AbilitySystem));
 	const auto AttributeSet = NewObject<UFineCharacterAttributeSet>(Owner, AttributeSetClass);
-	AbilitySystemComponent->AddSpawnedAttribute(AttributeSet);
+	AbilitySystem->AddSpawnedAttribute(AttributeSet);
 
 	// Use local database component to get the record for the ability attribute set.
 	const auto Database = GetLocalDatabaseComponent();
@@ -180,24 +180,24 @@ void UFineCharacterGameplay::BeginPlay()
 
 	GiveDefaultAbilities();
 
-	AbilitySystemComponent->AddLooseGameplayTag(
+	AbilitySystem->AddLooseGameplayTag(
 		FGameplayTag::RequestGameplayTag(FName(TEXT("Actor.State.Alive"))));
 
 	// Add listener for health change.
-	OnHealthUpdated = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
+	OnHealthUpdated = AbilitySystem->GetGameplayAttributeValueChangeDelegate(
 		UFineCharacterAttributeSet::GetHealthAttribute()).AddUObject(
 		this, &UFineCharacterGameplay::OnHealthChanged);
 
 	// Add listener for movement speed change.
-	OnMovementSpeedUpdated = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
+	OnMovementSpeedUpdated = AbilitySystem->GetGameplayAttributeValueChangeDelegate(
 		UFineCharacterAttributeSet::GetMovementSpeedAttribute()).AddUObject(
 		this, &UFineCharacterGameplay::OnMovementSpeedChanged);
 
 	// Apply stamina refill effect to periodically refill stamina.
 	const auto StaminaRefillClass = LoadClass<UGameplayEffect>(
 		this,TEXT("/FinePlay/Ability/GE_Refill_Stamina.GE_Refill_Stamina_C"));
-	AbilitySystemComponent->ApplyGameplayEffectToSelf(StaminaRefillClass->GetDefaultObject<UGameplayEffect>(), 1.0f,
-	                                                  AbilitySystemComponent->MakeEffectContext());
+	AbilitySystem->ApplyGameplayEffectToSelf(StaminaRefillClass->GetDefaultObject<UGameplayEffect>(), 1.0f,
+	                                                  AbilitySystem->MakeEffectContext());
 }
 
 void UFineCharacterGameplay::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -439,4 +439,15 @@ void UFineCharacterGameplay::ClearAllAbilities()
 	// Clear the ability handles.
 	AbilityHandles.Empty();
 	FP_LOG("All abilities cleared.");
+}
+
+UAbilitySystemComponent* UFineCharacterGameplay::SetAndGetAbilitySystemComponent()
+{
+	if (AbilitySystemComponent.IsValid())
+	{
+		return AbilitySystemComponent.Get();
+	}
+	const auto Owner = GetOwner();
+	AbilitySystemComponent = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Owner);
+	return AbilitySystemComponent.Get();
 }

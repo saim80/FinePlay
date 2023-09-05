@@ -41,9 +41,9 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnCharacterDamageTaken OnCharacterDamageTaken;
 
-	UFUNCTION(BlueprintCallable, Category = "FineCharacterGameplay")
-	float GetDistanceFromGroundStaticMesh(const FVector& Offset);
-	
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "FineCharacterGameplay")
+	float GetDistanceFromGroundStaticMesh(const FVector Offset = FVector::ZeroVector);
+
 	UFUNCTION(BlueprintCallable, Category = "FineCharacterGameplay")
 	FVector GetFeetLocation() const;
 
@@ -54,7 +54,7 @@ public:
 	void AddLooseGameplayTagForAbilitySystem(const FGameplayTag& Tag);
 	UFUNCTION(BlueprintCallable, Category= "FineCharacterGameplay")
 	void RemoveLooseGameplayTagForAbilitySystem(const FGameplayTag& Tag);
-	
+
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "FineCharacterGameplay", meta = (AllowPrivateAccess = "true"))
 	FName AliveGameplayTagName;
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "FineCharacterGameplay", meta = (AllowPrivateAccess = "true"))
@@ -63,6 +63,8 @@ public:
 	FName JumpGameplayTagName;
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "FineCharacterGameplay", meta = (AllowPrivateAccess = "true"))
 	FName RunGameplayTagName;
+
+	UAbilitySystemComponent* SetAndGetAbilitySystemComponent();
 
 protected:
 	virtual void BeginPlay() override;
@@ -79,10 +81,6 @@ protected:
 	void GiveDefaultAbilities();
 	void ClearAllAbilities();
 
-	FORCEINLINE UAbilitySystemComponent* GetAbilitySystemComponent() const
-	{
-		return AbilitySystemComponent.Get();
-	}
 private:
 	UPROPERTY(meta = (AllowPrivateAccess = "true"))
 	TWeakObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
