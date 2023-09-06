@@ -126,4 +126,5 @@ private:
 	// --------------------
 	bool IsCharacterRunning();
 	bool IsCharacterJumping();
+	bool GetCursorLocation(FVector& OutLocation) const;
 };

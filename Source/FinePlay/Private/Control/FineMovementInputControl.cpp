@@ -200,32 +200,18 @@ void UFineMovementInputControl::OnSetDestinationTriggered()
 	{
 		return;
 	}
-	const auto PlayerController = CastChecked<APlayerController>(GetOwner());
-
 	// We flag that the input is being pressed
 	FollowTime += GetWorld()->GetDeltaSeconds();
 
-	// We look for the location in the world where the player has pressed the input
-	FHitResult Hit;
-	bool bHitSuccessful = false;
-	if (bIsTouch)
-	{
-		bHitSuccessful = PlayerController->GetHitResultUnderFinger(ETouchIndex::Touch1,
-		                                                           ECollisionChannel::ECC_Visibility, true, Hit);
-	}
-	else
-	{
-		bHitSuccessful = PlayerController->GetHitResultUnderCursor(ECollisionChannel::ECC_Visibility, true, Hit);
-	}
-
 	// If we hit a surface, cache the location
-	if (bHitSuccessful)
+	FVector HitLocation;
+	if (GetCursorLocation(HitLocation))
 	{
 		if (bIsTouch && TouchStart == FVector::ZeroVector)
 		{
-			TouchStart = Hit.Location;
+			TouchStart = HitLocation;
 		}
-		CachedDestination = Hit.Location;
+		CachedDestination = HitLocation;
 	}
 
 	UpdateAddMovementInput();
@@ -440,6 +426,70 @@ bool UFineMovementInputControl::IsCharacterJumping()
 	return AbilitySystemComponent->HasMatchingGameplayTag(TagJumping);
 }
 
+bool UFineMovementInputControl::GetCursorLocation(FVector& OutLocation) const
+{
+	const auto PlayerController = CastChecked<APlayerController>(GetOwner());
+	const auto ControlledPawn = PlayerController->GetPawn();
+	if (!IsValid(ControlledPawn))
+	{
+		return false;
+	}
+	const auto CharacterMovement = ControlledPawn->FindComponentByClass<UCharacterMovementComponent>();
+	bool bHitSuccessful = false;
+	if (CharacterMovement->IsFlying())
+	{
+		// Get screen location of the cursor or finger.
+		FVector2D ScreenLocation;
+		bool IsPressed = false;
+		if (bIsTouch)
+		{
+			PlayerController->GetInputTouchState(ETouchIndex::Touch1, ScreenLocation.X, ScreenLocation.Y, IsPressed);
+		}
+		else
+		{
+			PlayerController->GetMousePosition(ScreenLocation.X, ScreenLocation.Y);
+			IsPressed = true;
+		}
+		if (IsPressed)
+		{
+			// Define a x, z plane at the altitude of the character.
+			const FVector PlaneOrigin = ControlledPawn->GetActorLocation();
+			const FVector PlaneNormal = FVector::UpVector;
+			const FPlane Plane(PlaneOrigin, PlaneNormal);
+			// Find intersection of the ray from the camera to the cursor with the plane.
+			FVector RayOrigin;
+			FVector RayDirection;
+			PlayerController->DeprojectScreenPositionToWorld(ScreenLocation.X, ScreenLocation.Y, RayOrigin,
+			                                                 RayDirection);
+			const FVector Intersection = FMath::LinePlaneIntersection(RayOrigin, RayOrigin + RayDirection * 10000.f,
+			                                                          Plane);
+			OutLocation = Intersection;
+			bHitSuccessful = true;
+		}
+	}
+	else
+	{
+		// We look for the location in the world where the player has pressed the input
+		FHitResult Hit;
+		if (bIsTouch)
+		{
+			bHitSuccessful = PlayerController->GetHitResultUnderFinger(ETouchIndex::Touch1,
+			                                                           ECollisionChannel::ECC_Visibility, true, Hit);
+		}
+		else
+		{
+			bHitSuccessful = PlayerController->GetHitResultUnderCursor(ECollisionChannel::ECC_Visibility, true, Hit);
+		}
+
+		if (bHitSuccessful)
+		{
+			OutLocation = Hit.Location;
+		}
+	}
+
+	return bHitSuccessful;
+}
+
 void UFineMovementInputControl::UpdateAddMovementInput()
 {
 	if (!IsActive())
@@ -464,20 +514,24 @@ void UFineMovementInputControl::UpdateAddMovementInput()
 	}
 	if (ControlledPawn != nullptr)
 	{
-		// Don't add input if the character is jumping.
 		// Get character gameplay component
 		const auto CharacterGameplay = ControlledPawn->FindComponentByClass<UFineCharacterGameplay>();
-		const FVector WorldDirection = Destination - ControlledPawn->GetActorLocation();
+		const auto CharacterMovement = ControlledPawn->FindComponentByClass<UCharacterMovementComponent>();
+		FVector WorldDirection = Destination - ControlledPawn->GetActorLocation();
 		if (WorldDirection.IsNearlyZero())
 		{
 			return;
 		}
-		constexpr float OffsetDistance = 5.f;
-		const auto ForwardOffset = WorldDirection.GetSafeNormal() * OffsetDistance;
-		const auto DistanceFromGround = CharacterGameplay->GetDistanceFromGroundStaticMesh(ForwardOffset);
-		if (DistanceFromGround > OffsetDistance)
+		if (!CharacterMovement->IsFlying())
 		{
-			return;
+			constexpr float OffsetDistance = 5.f;
+			const auto ForwardOffset = WorldDirection.GetSafeNormal() * OffsetDistance;
+			const auto DistanceFromGround = CharacterGameplay->GetDistanceFromGroundStaticMesh(ForwardOffset);
+			if (DistanceFromGround > OffsetDistance)
+			{
+				// Don't add input if the character is jumping.
+				return;
+			}
 		}
 		ControlledPawn->AddMovementInput(WorldDirection, 1.0, false);
 	}
