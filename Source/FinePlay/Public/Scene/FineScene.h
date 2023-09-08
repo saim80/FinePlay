@@ -33,6 +33,8 @@ public:
 
 	FORCEINLINE bool NeedsToLoadPlayerData() const { return RequiresPlayerData() && !IsPlayerDataLoaded(); }
 	FORCEINLINE bool NeedsToLoadGameData() const { return RequiresGameData() && !IsGameDataLoaded(); }
+
+	static AFineScene* GetCurrentScene(const UObject* WorldContextObject);
 protected:
 	/// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -53,6 +55,7 @@ protected:
 	bool bRequiresPlayerData = false;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Scene", meta = (AllowPrivateAccess = true))
 	bool bRequiresGameData = true;
+
 private:
 	friend class UFineSceneLoop;
 	TWeakObjectPtr<UFineSceneLoop> SceneLoop;
@@ -69,12 +72,12 @@ private:
 
 	bool IsPlayerDataLoaded() const;
 	bool IsGameDataLoaded() const;
-	
+
 	UFUNCTION()
 	void OnGameDataLoaded();
 	UFUNCTION()
 	void OnPlayerDataLoaded();
-	
+
 	void LoadGameData();
 	void LoadPlayerData();
 

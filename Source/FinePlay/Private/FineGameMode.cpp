@@ -8,7 +8,7 @@
 AActor* AFineGameMode::ChoosePlayerStart_Implementation(AController* Player)
 {
 	/// Get actor of AFineScene class.
-	const auto Scene = Cast<AFineScene>(Player->GetPawn()->GetOwner());
+	const auto Scene = AFineScene::GetCurrentScene(this);
 	/// if the scene is valid, return the player start actor with the tag.
 	if (IsValid(Scene))
 	{
@@ -21,7 +21,7 @@ bool AFineGameMode::PlayerCanRestart_Implementation(APlayerController* Player)
 {
 	const auto OldResult = Super::PlayerCanRestart_Implementation(Player);
 	/// Get actor of AFineScene class.
-	const auto Scene = Cast<AFineScene>(Player->GetPawn()->GetOwner());
+	const auto Scene = AFineScene::GetCurrentScene(this);
 	if (IsValid(Scene))
 	{
 		/// If scene's tag is not empty, return true.

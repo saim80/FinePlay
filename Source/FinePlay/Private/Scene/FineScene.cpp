@@ -4,6 +4,7 @@
 #include "Scene/FineScene.h"
 
 #include "FineCountedFlag.h"
+#include "FineGameState.h"
 #include "FinePlayLog.h"
 #include "FineSaveGameComponent.h"
 #include "GameFramework/GameModeBase.h"
@@ -12,7 +13,7 @@
 #include "GameFramework/SpectatorPawn.h"
 #include "Kismet/GameplayStatics.h"
 #include "Utilities/FinePlayFunctionLibrary.h"
-#include "GameFramework/SpectatorPawn.h"
+#include "Scene/FineSceneLoop.h"
 
 // Sets default values
 AFineScene::AFineScene(): Super()
@@ -21,6 +22,23 @@ AFineScene::AFineScene(): Super()
 	LoadingScreenCountedFlag->SetFlagName(TEXT("LoadingScreen"));
 	// Lifecycle is controlled by UFineSceneLoop, not world partition.
 	SetIsSpatiallyLoaded(false);
+}
+
+AFineScene* AFineScene::GetCurrentScene(const UObject* WorldContextObject)
+{
+	const auto GameState = Cast<AFineGameState>(UGameplayStatics::GetGameState(WorldContextObject));
+	if (!IsValid(GameState))
+	{
+		FP_LOG("Invalid game state.");
+		return nullptr;
+	}
+	const auto SceneLoop = GameState->GetSceneLoop();
+	if (!IsValid(SceneLoop))
+	{
+		FP_LOG("Invalid scene loop.");
+		return nullptr;
+	}
+	return SceneLoop->GetCurrentScene();
 }
 
 void AFineScene::BeginPlay()
