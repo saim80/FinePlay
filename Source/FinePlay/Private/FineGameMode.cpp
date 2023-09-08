@@ -25,7 +25,9 @@ bool AFineGameMode::PlayerCanRestart_Implementation(APlayerController* Player)
 	if (IsValid(Scene))
 	{
 		/// If scene's tag is not empty, return true.
-		const auto NewResult = Scene->GetPlayerStartTag().IsEmpty() == false;
+		const auto NewResult = Scene->GetPlayerStartTag().IsEmpty() == false && !Scene->NeedsToLoadGameData() &&
+			!Scene->NeedsToLoadPlayerData();
+		/// Returning false will cause the default pawn to be spectator.
 		return OldResult && NewResult;
 	}
 	return OldResult;
