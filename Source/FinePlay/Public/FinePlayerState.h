@@ -7,6 +7,7 @@
 #include "UObject/Object.h"
 #include "FinePlayerState.generated.h"
 
+class UFineSaveGameComponent;
 class UFineUserDatabaseComponent;
 /**
  * 
@@ -20,8 +21,12 @@ public:
 	AFinePlayerState();
 
 	FORCEINLINE UFineUserDatabaseComponent* GetUserDatabaseComponent() const { return UserDatabaseComponent; }
+	FORCEINLINE UFineUserDatabaseComponent* GetUserDatabaseComponent() { return UserDatabaseComponent; }
 
 private:
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, meta = (AllowPrivateAccess = "true"))
 	UFineUserDatabaseComponent* UserDatabaseComponent;
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, meta = (AllowPrivateAccess = "true"))
+	UFineSaveGameComponent* SaveGameComponent;
 };

@@ -7,6 +7,7 @@
 #include "GameFramework/GameState.h"
 #include "FineGameState.generated.h"
 
+class UFineSaveGameComponent;
 class UFineLocalDatabaseComponent;
 class UFineSceneLoop;
 
@@ -22,6 +23,7 @@ public:
 	FORCEINLINE UFineSceneLoop* GetSceneLoop() const { return SceneLoop; }
 
 	FORCEINLINE UFineLocalDatabaseComponent* GetLocalDatabaseComponent() const { return LocalDatabaseComponent; }
+	FORCEINLINE UFineSaveGameComponent* GetSaveGameComponent() const { return SaveGameComponent; }
 
 private:
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, meta = (AllowPrivateAccess = "true"))
@@ -35,4 +37,7 @@ private:
 	/// For multiplayer games, use a server database or replication.
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UFineLocalDatabaseComponent> LocalDatabaseComponent;
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, meta = (AllowPrivateAccess = "true"))
+	UFineSaveGameComponent* SaveGameComponent;
 };
