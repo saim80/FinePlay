@@ -35,6 +35,7 @@ public:
 	FORCEINLINE bool NeedsToLoadGameData() const { return RequiresGameData() && !IsGameDataLoaded(); }
 
 	static AFineScene* GetCurrentScene(const UObject* WorldContextObject);
+
 protected:
 	/// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -55,6 +56,8 @@ protected:
 	bool bRequiresPlayerData = false;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Scene", meta = (AllowPrivateAccess = true))
 	bool bRequiresGameData = true;
+
+	FORCEINLINE void SetPlayerStartTag(const FString& InPlayerStartTag) { PlayerStartTag = InPlayerStartTag; }
 
 private:
 	friend class UFineSceneLoop;

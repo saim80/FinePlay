@@ -11,15 +11,7 @@
 // Sets default values
 AFineGameState::AFineGameState(): Super()
 {
-	TSubclassOf<UFineSceneLoop> TargetClass;
-	if (SceneLoopClass.IsNull())
-	{
-		TargetClass = UFineSceneLoop::StaticClass();
-	}
-	else
-	{
-		TargetClass = SceneLoopClass.LoadSynchronous();
-	}
+	const auto TargetClass = UFineSceneLoop::StaticClass();
 	SceneLoop = Cast<UFineSceneLoop>(CreateDefaultSubobject(TEXT("SceneLoop"), TargetClass, TargetClass, true, false));
 	LocalDatabaseComponent = CreateDefaultSubobject<UFineLocalDatabaseComponent>(TEXT("LocalDatabaseComponent"));
 	SaveGameComponent = CreateDefaultSubobject<UFineSaveGameComponent>(TEXT("SaveGameComponent"));

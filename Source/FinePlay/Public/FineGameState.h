@@ -26,10 +26,7 @@ public:
 	FORCEINLINE UFineSaveGameComponent* GetSaveGameComponent() const { return SaveGameComponent; }
 
 private:
-	UPROPERTY(BlueprintReadOnly, EditAnywhere, meta = (AllowPrivateAccess = "true"))
-	TSoftClassPtr<UFineSceneLoop> SceneLoopClass;
-
-	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UFineSceneLoop> SceneLoop;
 
 	/// Local data base to pull the game wide data from. This is read only database.
