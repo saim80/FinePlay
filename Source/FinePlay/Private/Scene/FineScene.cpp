@@ -9,6 +9,7 @@
 #include "FineSaveGameComponent.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/GameStateBase.h"
+#include "GameFramework/PlayerStart.h"
 #include "GameFramework/PlayerState.h"
 #include "GameFramework/SpectatorPawn.h"
 #include "Kismet/GameplayStatics.h"
@@ -22,6 +23,7 @@ AFineScene::AFineScene(): Super()
 	LoadingScreenCountedFlag->SetFlagName(TEXT("LoadingScreen"));
 	// Lifecycle is controlled by UFineSceneLoop, not world partition.
 	SetIsSpatiallyLoaded(false);
+	SetTickableWhenPaused(true);
 }
 
 AFineScene* AFineScene::GetCurrentScene(const UObject* WorldContextObject)
@@ -59,6 +61,11 @@ void AFineScene::BeginPlay()
 
 void AFineScene::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+	const auto PlayerPawn = UGameplayStatics::GetPlayerPawn(this, 0);
+	if (IsValid(PlayerPawn))
+	{
+		PlayerPawn->Destroy();
+	}
 	LoadingScreenCountedFlag->OnFlagUpdated.RemoveDynamic(this, &AFineScene::UpdateLoadingScreenVisibility);
 	Super::EndPlay(EndPlayReason);
 }
@@ -71,7 +78,8 @@ void AFineScene::UpdateLoadingScreenVisibility(UFineCountedFlag* Flag, const boo
 	}
 	else
 	{
-		OnLoadingFinished();
+		// Adding some delay to prevent flickering.
+		GetWorldTimerManager().SetTimer(LoadingScreenTimerHandle, this, &AFineScene::OnLoadingFinished, 0.2f, false);
 	}
 }
 
@@ -87,9 +95,15 @@ void AFineScene::OnLoadingFinished_Implementation()
 
 void AFineScene::TryTeleportToScene()
 {
-	if (NeedsToLoadGameData() || NeedsToLoadPlayerData())
+	if (NeedsToLoadGameData())
 	{
-		FP_LOG("Cannot teleport to the scene's player start yet. game data or player data is not loaded.");
+		FP_LOG("Cannot teleport to the scene's player start yet. game data is not loaded.");
+		return;
+	}
+	if (NeedsToLoadPlayerData())
+	{
+		FP_LOG("Cannot teleport to the scene's player start yet. player data is not loaded.");
+		return;
 	}
 	// Check player controller if the controlled pawn is spectator.
 	// If so, spawn player pawn according to the game mode.
@@ -108,7 +122,13 @@ void AFineScene::TryTeleportToScene()
 	/// Get game mode
 	const auto GameMode = UGameplayStatics::GetGameMode(this);
 	/// Find player start with the tag.
-	const AActor* PlayerStart = GameMode->FindPlayerStart(PlayerController, PlayerStartTag);
+	const auto PlayerStart = Cast<APlayerStart>(GameMode->FindPlayerStart(PlayerController, PlayerStartTag));
+	if (PlayerStartTag != PlayerStart->PlayerStartTag.ToString())
+	{
+		FP_ERROR("Invalid player start found: expected %s, returned: %s", *PlayerStartTag,
+		         *PlayerStart->PlayerStartTag.ToString());
+		return;
+	}
 	/// Get pawn for the controller.
 	/// If the pawn is valid, teleport it to the player start.
 	if (const auto PlayerPawn = PlayerController->GetPawn())
@@ -116,17 +136,30 @@ void AFineScene::TryTeleportToScene()
 		const auto SourceLocation = PlayerPawn->GetActorLocation();
 		const auto TargetLocation = PlayerStart->GetActorLocation();
 		/// If the pawn is nearly not at the player start, teleport it.
-		if ((TargetLocation - SourceLocation).IsNearlyZero(0.1f))
+		if (!FMath::IsNearlyZero((TargetLocation - SourceLocation).Length()))
 		{
 			PlayerPawn->TeleportTo(TargetLocation, PlayerStart->GetActorRotation());
+			FP_LOG("Teleporting player pawn to: %s", *PlayerStartTag);
 		}
+		else
+		{
+			FP_LOG("Too close. Won't teleport the player pawn: %s", *PlayerStartTag);
+		}
+		LoadingScreenCountedFlag->SetEnabled(true);
 		if (UFinePlayFunctionLibrary::IsStreamingNeeded(this))
 		{
-			LoadingScreenCountedFlag->SetEnabled(true);
 			// Start timer with 0.1 second delay.
 			GetWorldTimerManager().SetTimer(LoadingScreenTimerHandle, this, &AFineScene::TryHideLoadingScreen, 0.1f,
 			                                true);
 		}
+		else
+		{
+			TryHideLoadingScreen();
+		}
+	}
+	else
+	{
+		FP_LOG("Player pawn is null.");
 	}
 }
 
@@ -188,10 +221,8 @@ void AFineScene::OnGameDataLoaded()
 	}
 	GameData->OnSaveGameLoaded.RemoveDynamic(this, &AFineScene::OnGameDataLoaded);
 
-	if (IsPlayerDataLoaded())
-	{
-		TryTeleportToScene();
-	}
+	FP_LOG("Game data loaded.");
+	TryTeleportToScene();
 	LoadingScreenCountedFlag->SetEnabled(false);
 }
 
@@ -213,10 +244,8 @@ void AFineScene::OnPlayerDataLoaded()
 	}
 	PlayerData->OnSaveGameLoaded.RemoveDynamic(this, &AFineScene::OnPlayerDataLoaded);
 
-	if (IsGameDataLoaded())
-	{
-		TryTeleportToScene();
-	}
+	FP_LOG("Player data loaded.");
+	TryTeleportToScene();
 	LoadingScreenCountedFlag->SetEnabled(false);
 }
 
@@ -233,6 +262,7 @@ void AFineScene::LoadGameData()
 			GameData->OnSaveGameLoaded.AddDynamic(this, &AFineScene::OnGameDataLoaded);
 			GameData->AsyncLoadProgress();
 			LoadingScreenCountedFlag->SetEnabled(true);
+			FP_LOG("Game data loading started.");
 		}
 	}
 }
@@ -250,6 +280,7 @@ void AFineScene::LoadPlayerData()
 			PlayerData->OnSaveGameLoaded.AddDynamic(this, &AFineScene::OnPlayerDataLoaded);
 			PlayerData->AsyncLoadProgress();
 			LoadingScreenCountedFlag->SetEnabled(true);
+			FP_LOG("Player data loading started.");
 		}
 	}
 }

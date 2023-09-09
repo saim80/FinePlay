@@ -3,6 +3,8 @@
 
 #include "Scene/FineSceneLoop.h"
 
+#include "GameFramework/GameStateBase.h"
+#include "Kismet/GameplayStatics.h"
 #include "Scene/FineScene.h"
 
 void UFineSceneLoop::AddScene(TSubclassOf<AFineScene> SceneClass)
@@ -53,10 +55,14 @@ void UFineSceneLoop::PlayNext()
 	// Get the first class in the scene classes array.
 	const TSubclassOf<AFineScene> SceneClass = SceneClasses[0];
 	// Spawn the scene actor.
-	AFineScene* Scene = GetWorld()->SpawnActor<AFineScene>(SceneClass);
+	AFineScene* Scene = GetWorld()->SpawnActorDeferred<AFineScene>(SceneClass, FTransform::Identity, GetOwner(),
+	                                                               nullptr,
+	                                                               ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
 	Scene->SceneLoop = this;
 	// Assign the current scene.
 	CurrentScene = Scene;
+
+	UGameplayStatics::FinishSpawningActor(Scene, FTransform::Identity);
 }
 
 void UFineSceneLoop::Clear()
@@ -64,6 +70,16 @@ void UFineSceneLoop::Clear()
 	DestroyCurrentScene();
 	// Clear the scene classes array.
 	SceneClasses.Empty();
+}
+
+UFineSceneLoop* UFineSceneLoop::Get(UObject* WorldContext)
+{
+	const auto GameState = UGameplayStatics::GetGameState(WorldContext);
+	if (IsValid(GameState))
+	{
+		return GameState->FindComponentByClass<UFineSceneLoop>();
+	}
+	return nullptr;
 }
 
 void UFineSceneLoop::DestroyCurrentScene()

@@ -17,4 +17,5 @@ class FINEPLAY_API AFineGameMode : public AGameMode
 protected:
 	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
 	virtual bool PlayerCanRestart_Implementation(APlayerController* Player) override;
+	virtual UClass* GetDefaultPawnClassForController_Implementation(AController* InController) override;
 };

@@ -34,6 +34,8 @@ public:
 	FORCEINLINE bool NeedsToLoadPlayerData() const { return RequiresPlayerData() && !IsPlayerDataLoaded(); }
 	FORCEINLINE bool NeedsToLoadGameData() const { return RequiresGameData() && !IsGameDataLoaded(); }
 
+	FORCEINLINE UClass* GetDefaultPawnClass() const { return DefaultPawnClass.LoadSynchronous(); }
+
 	static AFineScene* GetCurrentScene(const UObject* WorldContextObject);
 
 protected:
@@ -58,6 +60,9 @@ protected:
 	bool bRequiresGameData = true;
 
 	FORCEINLINE void SetPlayerStartTag(const FString& InPlayerStartTag) { PlayerStartTag = InPlayerStartTag; }
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Scene", meta = (AllowPrivateAccess = true))
+	TSoftClassPtr<APawn> DefaultPawnClass;
 
 private:
 	friend class UFineSceneLoop;

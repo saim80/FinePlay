@@ -3,6 +3,7 @@
 
 #include "FineGameMode.h"
 
+#include "FinePlayLog.h"
 #include "Scene/FineScene.h"
 
 AActor* AFineGameMode::ChoosePlayerStart_Implementation(AController* Player)
@@ -31,4 +32,27 @@ bool AFineGameMode::PlayerCanRestart_Implementation(APlayerController* Player)
 		return OldResult && NewResult;
 	}
 	return OldResult;
+}
+
+UClass* AFineGameMode::GetDefaultPawnClassForController_Implementation(AController* InController)
+{
+	const auto CurrentScene = AFineScene::GetCurrentScene(this);
+	UClass* OutClass = nullptr;
+	if (IsValid(CurrentScene))
+	{
+		OutClass = CurrentScene->GetDefaultPawnClass();
+		if (IsValid(OutClass))
+		{
+			FP_LOG("Picking default pawn class for controller: %s", *OutClass->GetName());
+		}
+	}
+	if (!IsValid(OutClass))
+	{
+		OutClass = Super::GetDefaultPawnClassForController_Implementation(InController);
+		if (IsValid(OutClass))
+		{
+			FP_LOG("No pawn class found, falling back to default: %s", *OutClass->GetName());
+		}
+	}
+	return OutClass;
 }

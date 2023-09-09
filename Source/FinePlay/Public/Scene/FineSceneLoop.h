@@ -35,6 +35,7 @@ public:
 	FORCEINLINE AFineScene* GetCurrentScene() const { return CurrentScene; }
 	FORCEINLINE TArray<TSubclassOf<AFineScene>> GetSceneClasses() const { return SceneClasses; }
 
+	static UFineSceneLoop* Get(UObject* WorldContext);
 private:
 	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	TArray<TSubclassOf<AFineScene>> SceneClasses;
