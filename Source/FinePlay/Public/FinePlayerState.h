@@ -23,6 +23,13 @@ public:
 	FORCEINLINE UFineUserDatabaseComponent* GetUserDatabaseComponent() const { return UserDatabaseComponent; }
 	FORCEINLINE UFineUserDatabaseComponent* GetUserDatabaseComponent() { return UserDatabaseComponent; }
 
+protected:
+	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+	UFUNCTION()
+	void OnSaveGameLoaded();
+
 private:
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, meta = (AllowPrivateAccess = "true"))
 	UFineUserDatabaseComponent* UserDatabaseComponent;
