@@ -76,19 +76,19 @@ void UFineCharacterAttributeSet::PreAttributeChange(const FGameplayAttribute& At
 {
 	if (Attribute.GetUProperty() == GetHealthAttribute().GetUProperty())
 	{
-		NewValue = FMath::Clamp<float>(NewValue, 0.0f, MaxHealth);
+		NewValue = FMath::Clamp<float>(NewValue, 0.0f, GetMaxHealth());
 	}
 	else if (Attribute.GetUProperty() == GetManaAttribute().GetUProperty())
 	{
-		NewValue = FMath::Clamp<float>(NewValue, 0.0f, MaxMana);
+		NewValue = FMath::Clamp<float>(NewValue, 0.0f, GetMaxMana());
 	}
 	else if (Attribute.GetUProperty() == GetMovementSpeedAttribute().GetUProperty())
 	{
-		NewValue = FMath::Clamp<float>(NewValue, 0.0f, MaxMovementSpeed);
+		NewValue = FMath::Clamp<float>(NewValue, 0.0f, GetMaxMovementSpeed());
 	}
 	else if (Attribute.GetUProperty() == GetStaminaAttribute().GetUProperty())
 	{
-		NewValue = FMath::Clamp<float>(NewValue, 0.0f, MaxStamina);
+		NewValue = FMath::Clamp<float>(NewValue, 0.0f, GetMaxStamina());
 	}
 }
 
@@ -99,7 +99,7 @@ void UFineCharacterAttributeSet::PostAttributeChange(const FGameplayAttribute& A
 	{
 		static const auto ExhaustedTag = FGameplayTag::RequestGameplayTag(FName(TEXT("Actor.State.Exhausted")));
 		const auto AbilitySystem = GetOwningAbilitySystemComponent();
-		if (FMath::IsNearlyEqual(NewValue, MaxStamina, UE_KINDA_SMALL_NUMBER))
+		if (FMath::IsNearlyEqual(NewValue, GetMaxStamina(), UE_KINDA_SMALL_NUMBER))
 		{
 			if (AbilitySystem->HasMatchingGameplayTag(ExhaustedTag))
 			{

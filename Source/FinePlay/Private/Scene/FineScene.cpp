@@ -86,11 +86,19 @@ void AFineScene::UpdateLoadingScreenVisibility(UFineCountedFlag* Flag, const boo
 void AFineScene::OnLoadingStarted_Implementation()
 {
 	FP_LOG("Loading started. %s", *GetPlayerStartTag());
+	if (SceneLoop.IsValid())
+	{
+		SceneLoop->OnSceneWillLoad.Broadcast(PlayerStartTag);
+	}
 }
 
 void AFineScene::OnLoadingFinished_Implementation()
 {
 	FP_LOG("Loading finished. %s", *GetPlayerStartTag());
+	if (SceneLoop.IsValid())
+	{
+		SceneLoop->OnSceneDidLoad.Broadcast(PlayerStartTag);
+	}
 }
 
 void AFineScene::TryTeleportToScene()

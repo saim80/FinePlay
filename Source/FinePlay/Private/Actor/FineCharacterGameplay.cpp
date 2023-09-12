@@ -294,7 +294,7 @@ void UFineCharacterGameplay::SetHealth(float InHealth)
 
 float UFineCharacterGameplay::GetMaxHealth() const
 {
-	return GetAttributeSet()->MaxHealth;
+	return GetAttributeSet()->GetMaxHealth();
 }
 
 void UFineCharacterGameplay::SetMaxHealth(float InMaxHealth)
@@ -302,7 +302,7 @@ void UFineCharacterGameplay::SetMaxHealth(float InMaxHealth)
 	// if value changed, update the attribute set.
 	if (GetMaxHealth() != InMaxHealth)
 	{
-		GetAttributeSet()->MaxHealth = InMaxHealth;
+		GetAttributeSet()->SetMaxHealth(InMaxHealth);
 	}
 }
 
@@ -322,7 +322,7 @@ void UFineCharacterGameplay::SetMana(float InMana)
 
 float UFineCharacterGameplay::GetMaxMana() const
 {
-	return GetAttributeSet()->MaxMana;
+	return GetAttributeSet()->GetMaxMana();
 }
 
 void UFineCharacterGameplay::SetMaxMana(float InMaxMana)
@@ -330,7 +330,7 @@ void UFineCharacterGameplay::SetMaxMana(float InMaxMana)
 	// if value changed, update the attribute set.
 	if (GetMaxMana() != InMaxMana)
 	{
-		GetAttributeSet()->MaxMana = InMaxMana;
+		GetAttributeSet()->SetMaxMana(InMaxMana);
 	}
 }
 
@@ -350,7 +350,7 @@ void UFineCharacterGameplay::SetMovementSpeed(float InMovementSpeed)
 
 float UFineCharacterGameplay::GetMaxMovementSpeed() const
 {
-	return GetAttributeSet()->MaxMovementSpeed;
+	return GetAttributeSet()->GetMaxMovementSpeed();
 }
 
 void UFineCharacterGameplay::SetMaxMovementSpeed(float InMaxMovementSpeed)
@@ -358,7 +358,7 @@ void UFineCharacterGameplay::SetMaxMovementSpeed(float InMaxMovementSpeed)
 	// if value changed, update the attribute set.
 	if (GetMaxMovementSpeed() != InMaxMovementSpeed)
 	{
-		GetAttributeSet()->MaxMovementSpeed = InMaxMovementSpeed;
+		GetAttributeSet()->SetMaxMovementSpeed(InMaxMovementSpeed);
 	}
 }
 
@@ -406,7 +406,7 @@ void UFineCharacterGameplay::SetStamina(float InStamina)
 
 float UFineCharacterGameplay::GetMaxStamina() const
 {
-	return GetAttributeSet()->MaxStamina;
+	return GetAttributeSet()->GetMaxStamina();
 }
 
 void UFineCharacterGameplay::SetMaxStamina(float InMaxStamina)
@@ -414,7 +414,7 @@ void UFineCharacterGameplay::SetMaxStamina(float InMaxStamina)
 	// if value changed, update the attribute set.
 	if (GetMaxStamina() != InMaxStamina)
 	{
-		GetAttributeSet()->MaxStamina = InMaxStamina;
+		GetAttributeSet()->SetMaxStamina(InMaxStamina);
 	}
 }
 

@@ -25,6 +25,11 @@ class FINEPLAY_API UFineCharacterAttributeSet : public UAttributeSet
 	GENERATED_BODY()
 	
 public:
+	ATTRIBUTE_ACCESSORS(UFineCharacterAttributeSet, MaxHealth)
+	ATTRIBUTE_ACCESSORS(UFineCharacterAttributeSet, MaxMana)
+	ATTRIBUTE_ACCESSORS(UFineCharacterAttributeSet, MaxMovementSpeed)
+	ATTRIBUTE_ACCESSORS(UFineCharacterAttributeSet, MaxStamina)
+	
 	ATTRIBUTE_ACCESSORS(UFineCharacterAttributeSet, Health)
 	ATTRIBUTE_ACCESSORS(UFineCharacterAttributeSet, Mana)
 	ATTRIBUTE_ACCESSORS(UFineCharacterAttributeSet, MovementSpeed)
@@ -34,13 +39,13 @@ public:
 	ATTRIBUTE_ACCESSORS(UFineCharacterAttributeSet, IncomingDamage)
 
 	UPROPERTY(BlueprintReadOnly, Category = "AttributeSet")
-	float MaxHealth;
+	FGameplayAttributeData MaxHealth;
 	UPROPERTY(BlueprintReadOnly, Category = "AttributeSet")
-	float MaxMana;
+	FGameplayAttributeData MaxMana;
 	UPROPERTY(BlueprintReadOnly, Category = "AttributeSet")
-	float MaxMovementSpeed;
+	FGameplayAttributeData MaxMovementSpeed;
 	UPROPERTY(BlueprintReadOnly, Category = "AttributeSet")
-	float MaxStamina;
+	FGameplayAttributeData MaxStamina;
 
 	UPROPERTY(BlueprintReadOnly, Category = "AttributeSet")
 	FGameplayAttributeData Health;
@@ -49,13 +54,13 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "AttributeSet")
 	FGameplayAttributeData MovementSpeed;
 	UPROPERTY(BlueprintReadOnly, Category = "AttributeSet")
+	FGameplayAttributeData Stamina;
+	UPROPERTY(BlueprintReadOnly, Category = "AttributeSet")
 	FGameplayAttributeData AttackPower;
 	UPROPERTY(BlueprintReadOnly, Category = "AttributeSet")
 	FGameplayAttributeData DefensePower;
 	UPROPERTY(BlueprintReadOnly, Category = "AttributeSet")
 	FGameplayAttributeData IncomingDamage;
-	UPROPERTY(BlueprintReadOnly, Category = "AttributeSet")
-	FGameplayAttributeData Stamina;
 
 protected:
 	virtual bool PreGameplayEffectExecute(struct FGameplayEffectModCallbackData& Data) override;

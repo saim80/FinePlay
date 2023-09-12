@@ -6,6 +6,9 @@
 #include "UObject/Object.h"
 #include "FineSceneLoop.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSceneWillLoad, const FString&, SceneName);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSceneDidLoad, const FString&, SceneName);
+
 class AFineScene;
 /**
  * This class maintains scene actors by spawning and destroying them. This component is meant to be a part of
@@ -36,6 +39,12 @@ public:
 	FORCEINLINE TArray<TSubclassOf<AFineScene>> GetSceneClasses() const { return SceneClasses; }
 
 	static UFineSceneLoop* Get(UObject* WorldContext);
+
+	UPROPERTY(BlueprintAssignable)
+	FOnSceneWillLoad OnSceneWillLoad;
+	UPROPERTY(BlueprintAssignable)
+	FOnSceneDidLoad OnSceneDidLoad;
+
 private:
 	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	TArray<TSubclassOf<AFineScene>> SceneClasses;
